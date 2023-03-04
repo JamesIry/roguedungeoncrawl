@@ -1,0 +1,187 @@
+GameData(
+    title: "Dungeon Crawler",
+
+    screen_width: 1280,
+    screen_height: 800,
+
+    map_width: 80,
+    map_height: 50,
+    num_monsters: 50,
+
+    tile_width: 32,
+    tile_height: 32,
+    tile_font_file: "dungeonfont.png",
+
+    text_char_width: 8,
+    text_char_height: 8,
+    text_font_file: "terminal8x8.png",
+
+    fps_cap: 30.0,
+
+    entity_templates: [
+        EntityTemplate(
+            entity_type: Item,
+            name: "Weak Healing Potion",
+            glyph: '!',
+            levels: [0,1,2],
+            provides: Some([("Healing", 2)]),
+            frequency: 1,
+        ),
+        EntityTemplate(
+            entity_type: Item,
+            name: "Healing Potion",
+            glyph: '!',
+            levels: [0,1,2],
+            provides: Some([("Healing", 6)]),
+            frequency: 1,
+        ),
+        EntityTemplate(
+            entity_type: Item,
+            name: "Dungeon Map",
+            glyph: '{',
+            levels: [0,1,2],
+            provides: Some([("MagicMap", 0)]),
+            frequency: 1,
+        ),
+        EntityTemplate(
+            entity_type: Item,
+            name: "Rusty Sword",
+            glyph: 's',
+            levels: [0,1,2],
+            frequency: 1,
+            base_damage: Some(1),
+        ),
+        EntityTemplate(
+            entity_type: Item,
+            name: "Shiny Sword",
+            glyph: 'S',
+            levels: [0,1,2],
+            frequency: 1,
+            base_damage: Some(2),
+        ),        
+         EntityTemplate(
+            entity_type: Item,
+            name: "Huge Sword",
+            glyph: '/',
+            levels: [1,2],
+            frequency: 1,
+            base_damage: Some(3),
+        ), 
+        EntityTemplate(
+            entity_type: Enemy,
+            name: "Goblin",
+            glyph: 'g',
+            levels: [0,1,2],
+            hp: Some(1),
+            frequency: 3,
+            base_damage: Some(1),
+            fov: Some(6),
+        ),
+        EntityTemplate(
+            entity_type: Enemy,
+            name: "Orc",
+            glyph: 'o',
+            levels: [0,1,2],
+            hp: Some(2),
+            frequency: 2,
+            base_damage: Some(1),
+            fov: Some(6),
+        ),
+        EntityTemplate(
+            entity_type: Enemy,
+            name: "Ogre",
+            glyph: 'O',
+            levels: [1,2],
+            hp: Some(5),
+            frequency: 1,
+            base_damage: Some(2),
+            fov: Some(6),
+        ), 
+        EntityTemplate(
+            entity_type: Enemy,
+            name: "Ettin",
+            glyph: 'E',
+            levels: [2],
+            hp: Some(10),
+            frequency: 1,
+            base_damage: Some(3),
+            fov: Some(6),
+        ),                  
+    ],
+    player_template: PlayerTemplate(
+        hp:  10,
+        fov: 8,
+        glyph: '@',
+        base_damage: 1,
+    ),
+    amulet_template: AmuletTemplate(
+        name: "Amulet of Yala",
+        glyph: '|',
+    ),
+
+    automata_map_builder: CellularAutomataMapBuilder (
+        num_iterations: 4,
+    ),
+    square_map_builder: SquareMapBuilder (
+        num_rooms: 20,
+    ),
+    drunkard_map_builder: DrunkardWalkMapBuilder (
+      cleared_ratio: 0.333,
+      stagger_distance: 400,
+    ),
+
+    forest_map_theme: MapTheme (
+        seen_wall: '"',
+        seen_floor: ';',
+        seen_exit: '>',
+        mapped_wall: '^',
+        mapped_floor: ' ',
+        mapped_exit: ' ',
+        not_seen: ' ',
+    ),
+
+    dungeon_map_theme: MapTheme (
+        seen_wall: '#',
+        seen_floor: '.',
+        seen_exit: '>',
+        mapped_wall: 'X',
+        mapped_floor: ' ',
+        mapped_exit: ' ',
+        not_seen: ' ',
+    ),
+
+    game_levels: [
+        GameLevel(
+            name: "Forests of Gloom",
+            builder: CellularAutomata,
+            theme: Forest,
+        ),
+        GameLevel(
+            name: "Castle of Despair",
+            builder: Square,
+            theme: Dungeon,
+        ),
+        GameLevel(
+            name: "Caverns of Suffering",
+            builder: DrunkardWalk,
+            theme: Dungeon,
+        ),
+    ],
+
+    prefabs: [
+        Prefab(
+            text: [
+                 "............",
+                 "...######...",
+                 "...#....#...",
+                 "...#.M..#...",
+                 ".###....###.",
+                 "..M......M..",
+                 ".###....###.",
+                 "...#....#...",
+                 "...#....#...",
+                 "...######...",
+                 "............",
+        ]),
+    ]
+)
