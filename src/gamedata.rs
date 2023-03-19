@@ -4,7 +4,7 @@ use serde::Deserialize;
 use std::collections::HashSet;
 use std::fs::File;
 
-#[derive(Clone, Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug, Resource)]
 pub struct GameData {
     pub title: String,
 
@@ -85,23 +85,24 @@ impl GameData {
     }
 
     fn spawn_entity(&self, pt: Point, template: &EntityTemplate, ecs: &mut World) {
-        let entity = ecs.push((
-            pt,
+        let mut entity = ecs.spawn((
+            Position(pt),
             Render {
                 color: ColorPair::new(WHITE, BLACK),
                 glyph: template.glyph,
             },
-            Name(template.name.clone()),
+            crate::components::Name(template.name.clone()),
         ));
-        let mut entry = ecs.entry(entity).unwrap();
 
         match template.entity_type {
-            EntityType::Item => entry.add_component(Item {}),
+            EntityType::Item => {
+                entity.insert(Item {});
+            }
             EntityType::Enemy => {
-                entry.add_component(Enemy {});
-                entry.add_component(FieldOfView::new(template.fov.unwrap()));
-                entry.add_component(ChasingPlayer {});
-                entry.add_component(Health {
+                entity.insert(Enemy {});
+                entity.insert(FieldOfView::new(template.fov.unwrap()));
+                entity.insert(ChasingPlayer {});
+                entity.insert(Health {
                     current: template.hp.unwrap(),
                     max: template.hp.unwrap(),
                 });
@@ -112,24 +113,28 @@ impl GameData {
             effects
                 .iter()
                 .for_each(|(provides, n)| match provides.as_str() {
-                    "Healing" => entry.add_component(ProvidesHealing { amount: *n }),
-                    "MagicMap" => entry.add_component(ProvidesDungeonMap),
+                    "Healing" => {
+                        entity.insert(ProvidesHealing { amount: *n });
+                    }
+                    "MagicMap" => {
+                        entity.insert(ProvidesDungeonMap);
+                    }
                     _ => panic!("Don't know how to provide {provides}"),
                 })
         }
 
         if let Some(damage) = &template.base_damage {
-            entry.add_component(Damage(*damage));
+            entity.insert(Damage(*damage));
             if template.entity_type == EntityType::Item {
-                entry.add_component(Weapon { equipped: false });
+                entity.insert(Weapon { equipped: false });
             }
         }
     }
 
     pub fn spawn_player(&self, ecs: &mut World, pos: Point) {
-        ecs.push((
+        ecs.spawn((
             Player { map_level: 0 },
-            pos,
+            Position(pos),
             Render {
                 color: ColorPair::new(WHITE, BLACK),
                 glyph: self.player_template.glyph,
@@ -144,15 +149,15 @@ impl GameData {
     }
 
     pub fn spawn_amulet_of_yala(&self, ecs: &mut World, pos: Point) {
-        ecs.push((
+        ecs.spawn((
             Item,
             AmuletOfYala,
-            pos,
+            Position(pos),
             Render {
                 color: ColorPair::new(WHITE, BLACK),
                 glyph: self.amulet_template.glyph,
             },
-            Name(self.amulet_template.name.clone()),
+            crate::components::Name(self.amulet_template.name.clone()),
         ));
     }
 

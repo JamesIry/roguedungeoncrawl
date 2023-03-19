@@ -2,57 +2,48 @@ use std::cmp::max;
 
 use crate::prelude::*;
 
-#[system]
-#[read_component(WantsToAttack)]
-#[read_component(Player)]
-#[write_component(Health)]
-#[read_component(Damage)]
-#[read_component(Carried)]
-#[read_component(Weapon)]
-pub fn combat(ecs: &mut SubWorld, commands: &mut CommandBuffer) {
-    let mut attackers = <(Entity, &WantsToAttack)>::query();
-    let targets: Vec<(Entity, Entity, Entity)> = attackers
-        .iter(ecs)
-        .map(|(message, wants_to_attack)| {
-            (*message, wants_to_attack.attacker, wants_to_attack.target)
-        })
-        .collect();
+pub fn combat_system(
+    mut commands: Commands,
+    attacks: Query<(Entity, &WantsToAttack)>,
+    attackers: Query<(Entity, &Damage)>,
+    targets: Query<(Entity, &Health, Option<&Player>)>,
+    weapons: Query<(&Carried, &Damage, &Weapon)>,
+) {
+    attacks.iter().for_each(|(message, wants_to_attack)| {
+        let attacker = wants_to_attack.attacker;
+        let target = wants_to_attack.target;
 
-    targets.iter().for_each(|(message, attacker, target)| {
-        let is_player = ecs
-            .entry_ref(*target)
+        let (target_health, target_is_player) = targets
             .iter()
-            .flat_map(|entity| entity.get_component::<Player>())
+            .filter(|t| t.0 == target)
+            .map(|(_, h, p)| (h, p.is_some()))
             .next()
-            .is_some();
+            .unwrap();
 
-        let base_damage: i32 = ecs
-            .entry_ref(*attacker)
+        let attacker_base_damage = attackers
             .iter()
-            .flat_map(|entry_ref| entry_ref.get_component::<Damage>())
-            .map(|dmg| dmg.0)
-            .sum();
+            .filter(|a| a.0 == attacker)
+            .map(|(_, dmg)| dmg.0)
+            .next()
+            .unwrap();
 
-        let weapon_damage: i32 = <(&Carried, &Damage, &Weapon)>::query()
-            .iter(ecs)
-            .filter(|(carried, _, weapon)| carried.0 == *attacker && weapon.equipped)
+        let weapon_damage: i32 = weapons
+            .iter()
+            .filter(|(carried, _, weapon)| carried.0 == wants_to_attack.attacker && weapon.equipped)
             .map(|(_, dmg, _)| dmg.0)
             .sum();
 
-        let final_damage = base_damage + weapon_damage;
+        let final_damage = attacker_base_damage + weapon_damage;
 
-        if let Some(mut health) = ecs
-            .entry_mut(*target)
-            .iter_mut()
-            .flat_map(|entity| entity.get_component_mut::<Health>())
-            .next()
-        {
-            health.current = max(0, health.current - final_damage);
-            if health.current < 1 && !is_player {
-                commands.remove(*target);
-            }
+        let new_health = max(0, target_health.current - final_damage);
+        commands.entity(target).insert(Health {
+            current: new_health,
+            max: target_health.max,
+        });
+        if new_health <= 0 && !target_is_player {
+            commands.entity(target).despawn();
         }
 
-        commands.remove(*message);
+        commands.entity(message).despawn();
     });
 }

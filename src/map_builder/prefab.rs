@@ -30,7 +30,7 @@ impl Prefab {
 
         let mut attempts = 0;
         while placement.is_none() && attempts < 10 {
-            let dimensions = Rect::with_size(
+            let dimensions = BracketRect::with_size(
                 rng.range(1, map.width() - width - 1),
                 rng.range(1, map.height() - height - 1),
                 width,

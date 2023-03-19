@@ -1,37 +1,24 @@
 use crate::prelude::*;
 
-#[system]
-#[read_component(Point)]
-#[read_component(Name)]
-#[read_component(Health)]
-#[read_component(Player)]
-#[read_component(FieldOfView)]
-pub fn tooltips(
-    ecs: &SubWorld,
-    #[resource] mouse_pos: &Point,
-    #[resource] camera: &Camera,
-    #[resource] gamedata: &GameData,
+pub fn tooltips_system(
+    mouse_pos: Res<Position>,
+    camera: Res<DCCamera>,
+    gamedata: Res<GameData>,
+    fov: Query<&FieldOfView, With<Player>>,
+    positions: Query<(&Position, &DCName, Option<&Health>)>,
 ) {
-    let mut fov = <&FieldOfView>::query().filter(component::<Player>());
-    let player_fov = fov.iter(ecs).next().unwrap();
+    let player_fov = fov.single();
 
-    let mut positions = <(Entity, &Point, &Name)>::query();
-
-    let world_mouse_pos = camera.screen_point_to_world_point(*mouse_pos);
+    let world_mouse_pos = camera.screen_point_to_world_point(mouse_pos.0);
 
     let mut draw_batch = DrawBatch::new();
     draw_batch.target(2);
-    for (entity, _, name) in positions
-        .iter(ecs)
-        .filter(|(_, pos, _)| player_fov.visible_tiles.contains(pos) && **pos == world_mouse_pos)
+    for (_, name, option_health) in positions
+        .iter()
+        .filter(|(pos, _, _)| player_fov.visible_tiles.contains(&pos.0) && pos.0 == world_mouse_pos)
     {
-        let screen_pos = *mouse_pos * gamedata.tile_display_width();
-        let display = if let Some(health) = ecs
-            .entry_ref(*entity)
-            .iter()
-            .flat_map(|entity| entity.get_component::<Health>())
-            .next()
-        {
+        let screen_pos = mouse_pos.0 * gamedata.tile_display_width();
+        let display = if let Some(health) = option_health {
             format!("{} : {} hp", &name.0, health.current)
         } else {
             name.0.clone()

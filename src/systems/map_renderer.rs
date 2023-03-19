@@ -1,18 +1,12 @@
 use crate::prelude::*;
 
-#[system]
-#[read_component(FieldOfView)]
-#[read_component(Point)]
-#[read_component(Player)]
-#[allow(clippy::borrowed_box)]
-pub fn map_renderer(
-    ecs: &SubWorld,
-    #[resource] map: &Map,
-    #[resource] camera: &Camera,
-    #[resource] theme: &MapTheme,
+pub fn map_renderer_system(
+    map: Res<Map>,
+    camera: Res<DCCamera>,
+    theme: Res<MapTheme>,
+    fov: Query<(&FieldOfView, &Position), With<Player>>,
 ) {
-    let mut fov = <(&FieldOfView, &Point)>::query().filter(component::<Player>());
-    let (player_fov, player_pos) = fov.iter(ecs).next().unwrap();
+    let (player_fov, player_pos) = fov.single();
 
     let mut draw_batch = DrawBatch::new();
     draw_batch.target(0);
@@ -25,7 +19,7 @@ pub fn map_renderer(
         {
             let visible = player_fov.visible_tiles.contains(&world_point);
             let tint: (u8, u8, u8) = if visible {
-                tint(*player_pos, world_point)
+                tint(player_pos.0, world_point)
             } else {
                 (128, 128, 128)
             };

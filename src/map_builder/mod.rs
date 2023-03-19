@@ -26,7 +26,7 @@ pub trait MapBuilder {
     ) -> BuiltMap;
 }
 
-#[derive(Copy, Clone, Deserialize, Debug)]
+#[derive(Copy, Clone, Deserialize, Debug, Resource)]
 pub struct MapTheme {
     seen_wall: char,
     seen_floor: char,

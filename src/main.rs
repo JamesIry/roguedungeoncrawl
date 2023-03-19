@@ -1,3 +1,5 @@
+#![allow(clippy::type_complexity)] // queries create complex types
+
 mod camera;
 mod components;
 mod gamedata;
@@ -18,10 +20,12 @@ mod prelude {
     pub use crate::rect::*;
     pub use crate::systems::*;
     pub use crate::turn_state::*;
+    pub use bevy::prelude::*;
     pub use bracket_lib::prelude::*;
-    pub use legion::systems::CommandBuffer;
-    pub use legion::world::SubWorld;
-    pub use legion::*;
+
+    pub type BracketRect = bracket_lib::geometry::Rect;
+    pub type DCCamera = crate::camera::Camera;
+    pub type DCName = crate::components::Name;
 }
 
 use std::env::args;
@@ -30,17 +34,16 @@ use prelude::*;
 
 struct State {
     ecs: World,
-    resources: Resources,
     input_systems: Schedule,
     player_systems: Schedule,
     monster_systems: Schedule,
 }
 impl State {
     fn new(gamedata: GameData) -> Self {
-        let (ecs, resources) = start_game(gamedata);
+        let mut ecs = World::new();
+        start_game(&mut ecs, gamedata);
         Self {
             ecs,
-            resources,
             input_systems: build_input_scheduler(),
             player_systems: build_player_scheduler(),
             monster_systems: build_monster_scheduler(),
@@ -71,16 +74,14 @@ impl State {
         ctx.print_color_centered(9, GREEN, BLACK, "Press 1 to play again.");
 
         if let Some(VirtualKeyCode::Key1) = ctx.key {
-            let gamedata = self.resources.get::<GameData>().unwrap().to_owned();
+            let gamedata = self.ecs.get_resource::<GameData>().unwrap().clone();
 
-            let (ecs, resources) = start_game(gamedata);
-            self.ecs = ecs;
-            self.resources = resources;
+            start_game(&mut self.ecs, gamedata);
         }
     }
 
     fn victory(&mut self, ctx: &mut BTerm) {
-        let gamedata = self.resources.get::<GameData>().unwrap().to_owned();
+        let gamedata = self.ecs.get_resource::<GameData>().unwrap().to_owned();
 
         ctx.set_active_console(2);
         ctx.print_color_centered(2, GREEN, BLACK, "You have won!");
@@ -99,21 +100,14 @@ impl State {
         ctx.print_color_centered(7, GREEN, BLACK, "Press 1 to play again.");
 
         if let Some(VirtualKeyCode::Key1) = ctx.key {
-            let (ecs, resources) = start_game(gamedata);
-            self.ecs = ecs;
-            self.resources = resources;
+            start_game(&mut self.ecs, gamedata);
         }
     }
 
     fn advance_level(&mut self) {
         let ecs = &mut self.ecs;
 
-        let (player_entity, player) = <(Entity, &mut Player)>::query()
-            .iter_mut(ecs)
-            .next()
-            .unwrap();
-
-        let player_entity = *player_entity;
+        let (player_entity, mut player) = ecs.query::<(Entity, &mut Player)>().single_mut(ecs);
 
         let new_map_level = player.map_level + 1;
         player.map_level = new_map_level;
@@ -123,62 +117,49 @@ impl State {
         let mut entities_to_keep = HashSet::new();
         entities_to_keep.insert(player_entity);
 
-        <(Entity, &Carried)>::query()
+        ecs.query::<(Entity, &Carried)>()
             .iter(ecs)
             .filter(|(_item, Carried(carrier))| *carrier == player_entity)
             .for_each(|(item, _carried)| {
-                entities_to_keep.insert(*item);
+                entities_to_keep.insert(item);
             });
 
         let mut entities_to_remove = Vec::new();
 
-        for entity in Entity::query().iter_mut(ecs) {
-            if !entities_to_keep.contains(entity) {
-                entities_to_remove.push(*entity);
+        for entity in ecs.query::<Entity>().iter_mut(ecs) {
+            if !entities_to_keep.contains(&entity) {
+                entities_to_remove.push(entity);
             }
         }
 
         for entity in entities_to_remove {
-            ecs.remove(entity);
+            ecs.despawn(entity);
         }
-        let gamedata = self.resources.get::<GameData>().unwrap().to_owned();
+        let gamedata = ecs.get_resource::<GameData>().unwrap().to_owned();
 
-        let player_start =
-            start_level(&mut self.ecs, &mut self.resources, new_map_level, &gamedata);
+        let player_start = start_level(ecs, new_map_level, &gamedata);
 
-        let (player_pos, player_fov) = <(&mut Point, &mut FieldOfView)>::query()
-            .filter(component::<Player>())
-            .iter_mut(&mut self.ecs)
-            .next()
-            .unwrap();
+        let (mut player_pos, mut player_fov) = ecs
+            .query_filtered::<(&mut Position, &mut FieldOfView), With<Player>>()
+            .single_mut(&mut self.ecs);
 
-        player_pos.x = player_start.x;
-        player_pos.y = player_start.y;
+        player_pos.0.x = player_start.x;
+        player_pos.0.y = player_start.y;
         player_fov.is_dirty = true;
     }
 }
 
-fn start_game(gamedata: GameData) -> (World, Resources) {
-    let mut ecs = World::default();
-    let mut resources = Resources::default();
+fn start_game(ecs: &mut World, gamedata: GameData) {
+    ecs.clear_all();
+
     let new_gamedata = gamedata.clone();
-    resources.insert(gamedata);
+    ecs.insert_resource(new_gamedata);
 
-    let player_start = start_level(&mut ecs, &mut resources, 0, &new_gamedata);
-    resources
-        .get::<GameData>()
-        .unwrap()
-        .spawn_player(&mut ecs, player_start);
-
-    (ecs, resources)
+    let player_start = start_level(ecs, 0, &gamedata);
+    gamedata.spawn_player(ecs, player_start);
 }
 
-fn start_level(
-    ecs: &mut World,
-    resources: &mut Resources,
-    map_level: usize,
-    gamedata: &GameData,
-) -> Point {
+fn start_level(ecs: &mut World, map_level: usize, gamedata: &GameData) -> Point {
     let mut rng = RandomNumberGenerator::new();
 
     let map_level_def = &gamedata.game_levels[map_level];
@@ -206,19 +187,19 @@ fn start_level(
     );
 
     let theme = map_level_def.get_theme(gamedata);
-    resources.insert(*theme);
-    resources.insert(MapInfo {
+    ecs.insert_resource(*theme);
+    ecs.insert_resource(MapInfo {
         name: map_level_def.name.clone(),
     });
 
-    let mut camera = Camera::new(
+    let mut camera = DCCamera::new(
         gamedata.tile_display_width(),
         gamedata.tile_display_height(),
         gamedata.map_width,
         gamedata.map_height,
     );
     camera.center_on_point(player_start);
-    resources.insert(camera);
+    ecs.insert_resource(camera);
 
     // spawn stuff
     if map_level >= gamedata.game_levels.len() - 1 {
@@ -229,8 +210,8 @@ fn start_level(
 
     gamedata.spawn_entities(ecs, &mut rng, map_level, &entity_spawns);
 
-    resources.insert(map);
-    resources.insert(TurnState::AwaitingInput);
+    ecs.insert_resource(map);
+    ecs.insert_resource(TurnState::AwaitingInput);
     player_start
 }
 
@@ -241,14 +222,14 @@ impl GameState for State {
             ctx.cls();
         }
 
-        self.resources.insert(ctx.key);
+        self.ecs.insert_resource(KeyPress(ctx.key));
         ctx.set_active_console(0);
-        self.resources.insert(Point::from_tuple(ctx.mouse_pos()));
+        self.ecs
+            .insert_resource(Position(Point::from_tuple(ctx.mouse_pos())));
 
-        let current_state = *self
-            .resources
-            .get::<TurnState>()
-            .as_deref()
+        let current_state = self
+            .ecs
+            .get_resource::<TurnState>()
             .unwrap_or(&TurnState::AwaitingInput);
         let schedule_opt = match current_state {
             TurnState::AwaitingInput => Some(&mut self.input_systems),
@@ -268,14 +249,14 @@ impl GameState for State {
             }
         };
         if let Some(schedule) = schedule_opt {
-            schedule.execute(&mut self.ecs, &mut self.resources);
+            schedule.run(&mut self.ecs);
             render_draw_buffer(ctx).expect("Render error");
         }
     }
 }
 
 fn main() -> BError {
-    let args = args().into_iter().collect::<Vec<String>>();
+    let args = args().collect::<Vec<String>>();
     let gamedata = GameData::load(GAME_DATA_PATH);
 
     if args.len() > 1 && args[1] == "test" {

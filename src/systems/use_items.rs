@@ -1,75 +1,65 @@
 use crate::prelude::*;
 
-#[system]
-#[read_component(ActivateItem)]
-#[read_component(ProvidesHealing)]
-#[read_component(ProvidesDungeonMap)]
-#[write_component(Health)]
-#[read_component(Carried)]
-#[write_component(Weapon)]
-pub fn use_items(ecs: &mut SubWorld, commands: &mut CommandBuffer, #[resource] map: &mut Map) {
-    let mut healing_to_apply = Vec::<(Entity, i32)>::new();
-
-    let mut unequip = Vec::new();
-
-    let mut equip = Vec::new();
-
-    <(Entity, &ActivateItem)>::query()
-        .iter(ecs)
-        .for_each(|(activate_entity, activate)| {
-            let activated_item_ref = ecs.entry_ref(activate.item);
-            let mut remove = true;
-            if let Ok(activated_item_ref) = activated_item_ref {
-                if let Ok(healing) = activated_item_ref.get_component::<ProvidesHealing>() {
-                    healing_to_apply.push((activate.used_by, healing.amount));
-                }
-                if let Ok(_mapper) = activated_item_ref.get_component::<ProvidesDungeonMap>() {
-                    map.revealed.iter_mut().for_each(|t| {
-                        if *t == Revealed::NotSeen {
-                            *t = Revealed::Mapped
+pub fn use_items_system(
+    mut commands: Commands,
+    mut map: ResMut<Map>,
+    activations: Query<(Entity, &ActivateItem)>,
+    items: Query<
+        (
+            Entity,
+            Option<&ProvidesHealing>,
+            Option<&ProvidesDungeonMap>,
+        ),
+        Without<Weapon>,
+    >,
+    mut weapons: Query<(Entity, &Carried, &mut Weapon)>,
+    mut healed: Query<(Entity, &mut Health)>,
+) {
+    activations
+        .iter()
+        .for_each(|(activate_entity, activation)| {
+            let mut is_weapon = false;
+            items
+                .iter()
+                .filter(|(item_entity, _, _)| *item_entity == activation.item)
+                .for_each(|(_, optional_healing, optional_map)| {
+                    if let Some(healing) = optional_healing {
+                        //  healing_to_apply.push((activate.used_by, healing.amount));
+                        for (_, mut health) in
+                            healed.iter_mut().filter(|h| h.0 == activation.used_by)
+                        {
+                            health.current = i32::min(health.max, health.current + healing.amount);
                         }
-                    });
-                }
-                if activated_item_ref.get_component::<Weapon>().is_ok() {
-                    <(Entity, &Carried, &Weapon)>::query()
-                        .iter(ecs)
-                        .filter(|(weapon_entity, Carried(carried_by), weapon)| {
-                            activate.item != **weapon_entity
-                                && *carried_by == activate.used_by
-                                && weapon.equipped
-                        })
-                        .for_each(|(weapon_entity, _, _)| {
-                            unequip.push(*weapon_entity);
+                    }
+                    if optional_map.is_some() {
+                        map.revealed.iter_mut().for_each(|t| {
+                            if *t == Revealed::NotSeen {
+                                *t = Revealed::Mapped
+                            }
                         });
+                    }
+                });
 
-                    equip.push(activate.item);
-                    remove = false;
-                }
+            weapons
+                .iter_mut()
+                .filter(|(weapon_entity, _, _)| *weapon_entity == activation.item)
+                .for_each(|(_, _, mut weapon)| {
+                    weapon.equipped = true;
+                    is_weapon = true;
+                });
+
+            if is_weapon {
+                weapons
+                    .iter_mut()
+                    .filter(|(weapon_entity, Carried(carried_by), _)| {
+                        *weapon_entity != activation.item && *carried_by == activation.used_by
+                    })
+                    .for_each(|(_, _, mut weapon)| {
+                        weapon.equipped = false;
+                    });
+            } else {
+                commands.entity(activation.item).despawn();
             }
-            if remove {
-                commands.remove(activate.item);
-            }
-            commands.remove(*activate_entity);
+            commands.entity(activate_entity).despawn();
         });
-
-    for (entity, heal_amount) in healing_to_apply.iter() {
-        if let Ok(mut target) = ecs.entry_mut(*entity) {
-            if let Ok(health) = target.get_component_mut::<Health>() {
-                health.current = i32::min(health.max, health.current + heal_amount);
-            }
-        }
-    }
-
-    set_equipped_status(ecs, &unequip, false);
-    set_equipped_status(ecs, &equip, true);
-}
-
-fn set_equipped_status(ecs: &mut SubWorld, weapons: &[Entity], equpped_status: bool) {
-    for weapon_entity in weapons.iter() {
-        if let Ok(mut weapon_ref) = ecs.entry_mut(*weapon_entity) {
-            if let Ok(weapon) = weapon_ref.get_component_mut::<Weapon>() {
-                weapon.equipped = equpped_status;
-            }
-        }
-    }
 }

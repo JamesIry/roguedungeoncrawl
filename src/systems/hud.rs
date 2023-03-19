@@ -2,24 +2,17 @@ use linked_hash_map::LinkedHashMap;
 
 use crate::prelude::*;
 
-#[system]
-#[read_component(Health)]
-#[read_component(Player)]
-#[read_component(Item)]
-#[read_component(Carried)]
-#[read_component(Name)]
-#[read_component(Weapon)]
-pub fn hud(ecs: &SubWorld, #[resource] gamedata: &GameData, #[resource] map_info: &MapInfo) {
-    let mut health_query = <&Health>::query().filter(component::<Player>());
-    let (player_health, message) = health_query
-        .iter(ecs)
-        .next()
-        .map(|h| (h, "Explore the Dungeon. Cursor keys to move."))
-        .unwrap();
+pub fn hud_system(
+    gamedata: Res<GameData>,
+    map_info: Res<MapInfo>,
+    player_query: Query<(Entity, &Health), With<Player>>,
+    item_query: Query<(&DCName, &Carried, Option<&Weapon>), (With<Item>, Without<Player>)>,
+) {
+    let (player_entity, player_health) = player_query.single();
 
     let mut draw_batch = DrawBatch::new();
     draw_batch.target(2);
-    draw_batch.print_centered(1, message);
+    draw_batch.print_centered(1, "Explore the Dungeon. Cursor keys to move.");
     draw_batch.bar_horizontal(
         Point::zero(),
         gamedata.text_display_width(),
@@ -36,37 +29,32 @@ pub fn hud(ecs: &SubWorld, #[resource] gamedata: &GameData, #[resource] map_info
         ColorPair::new(WHITE, RED),
     );
 
-    let (player_entity, _) = <(Entity, &Player)>::query().iter(ecs).next().unwrap();
-
     draw_batch.print_color_right(
         Point::new(gamedata.text_display_width(), 1),
         &map_info.name,
         ColorPair::new(YELLOW, BLACK),
     );
 
-    let mut item_query = <(Entity, &Item, &Name, &Carried)>::query();
     let mut y = 3;
     let mut item_map: LinkedHashMap<&String, (i32, bool)> = LinkedHashMap::new();
 
     item_query
-        .iter(ecs)
-        .filter(|(_, _, _, carried)| carried.0 == *player_entity)
-        .for_each(|(item_entity, _, name, _)| {
+        .iter()
+        .filter(|(_, carried, _)| carried.0 == player_entity)
+        .for_each(|(name, _, optional_weapon)| {
             let name = &name.0;
-            if let Ok(item_entity_ref) = ecs.entry_ref(*item_entity) {
-                let weapon_equipped = if let Ok(weapon) = item_entity_ref.get_component::<Weapon>()
-                {
-                    weapon.equipped
-                } else {
-                    false
-                };
-                if item_map.contains_key(name) {
-                    let (count, equipped) = item_map.get_mut(name).unwrap();
-                    *count += 1;
-                    *equipped = *equipped || weapon_equipped;
-                } else {
-                    item_map.insert(name, (1, weapon_equipped));
-                }
+
+            let weapon_equipped = if let Some(weapon) = optional_weapon {
+                weapon.equipped
+            } else {
+                false
+            };
+            if item_map.contains_key(name) {
+                let (count, equipped) = item_map.get_mut(name).unwrap();
+                *count += 1;
+                *equipped = *equipped || weapon_equipped;
+            } else {
+                item_map.insert(name, (1, weapon_equipped));
             }
         });
 

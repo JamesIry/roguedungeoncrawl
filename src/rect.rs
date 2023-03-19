@@ -5,10 +5,10 @@ use crate::prelude::*;
 pub struct RectIter<'a> {
     current_index: usize,
     max_index: usize,
-    rect: &'a Rect,
+    rect: &'a BracketRect,
 }
 impl<'a> RectIter<'a> {
-    fn new(rect: &'a Rect) -> Self {
+    fn new(rect: &'a BracketRect) -> Self {
         Self {
             current_index: 0,
             max_index: rect.max_index(),
@@ -47,14 +47,14 @@ pub trait RectExtension {
 
     fn centered_at_point(&self, point: Point) -> Self;
 
-    fn intersection(&self, other: &Rect) -> Option<Rect>;
+    fn intersection(&self, other: &BracketRect) -> Option<BracketRect>;
 
     fn in_bounds(&self, point: Point) -> bool;
 
     fn new(x1: i32, x2: i32, y1: i32, y2: i32) -> Self;
 }
 
-impl RectExtension for Rect {
+impl RectExtension for BracketRect {
     fn max_index(&self) -> usize {
         (self.width() * self.height()) as usize
     }
@@ -95,7 +95,7 @@ impl RectExtension for Rect {
         ))
     }
 
-    fn intersection(&self, other: &Rect) -> Option<Rect> {
+    fn intersection(&self, other: &BracketRect) -> Option<BracketRect> {
         let x1 = max(self.x1, other.x1);
         let x2 = min(self.x2, other.x2);
         let y1 = max(self.y1, other.y1);
@@ -112,8 +112,8 @@ impl RectExtension for Rect {
         point.x >= self.x1 && point.x < self.x2 && point.y >= self.y1 && point.y < self.y2
     }
 
-    fn new(x1: i32, x2: i32, y1: i32, y2: i32) -> Rect {
-        Rect {
+    fn new(x1: i32, x2: i32, y1: i32, y2: i32) -> BracketRect {
+        BracketRect {
             x1: min(x1, x2),
             x2: max(x1, x2),
             y1: min(y1, y2),
@@ -125,8 +125,8 @@ impl RectExtension for Rect {
 #[cfg(test)]
 mod tests {
     use crate::prelude::*;
-    fn rect1234() -> Rect {
-        Rect {
+    fn rect1234() -> BracketRect {
+        BracketRect {
             x1: 1,
             y1: 2,
             x2: 3,
@@ -134,8 +134,8 @@ mod tests {
         }
     }
 
-    fn rect0179() -> Rect {
-        Rect {
+    fn rect0179() -> BracketRect {
+        BracketRect {
             x1: 0,
             y1: 1,
             x2: 7,
@@ -145,19 +145,19 @@ mod tests {
 
     #[test]
     fn test_new() {
-        assert_eq!(Rect::new(1, 3, 2, 4), rect1234());
-        assert_eq!(Rect::new(3, 1, 2, 4), rect1234());
-        assert_eq!(Rect::new(1, 3, 4, 2), rect1234());
-        assert_eq!(Rect::new(3, 1, 4, 2), rect1234());
+        assert_eq!(BracketRect::new(1, 3, 2, 4), rect1234());
+        assert_eq!(BracketRect::new(3, 1, 2, 4), rect1234());
+        assert_eq!(BracketRect::new(1, 3, 4, 2), rect1234());
+        assert_eq!(BracketRect::new(3, 1, 4, 2), rect1234());
     }
 
     #[test]
     fn test_upper_left() {
         let upper_left = Point::new(1, 2);
-        assert_eq!(Rect::new(1, 3, 2, 4).upper_left(), upper_left);
-        assert_eq!(Rect::new(3, 1, 2, 4).upper_left(), upper_left);
-        assert_eq!(Rect::new(1, 3, 4, 2).upper_left(), upper_left);
-        assert_eq!(Rect::new(3, 1, 4, 2).upper_left(), upper_left);
+        assert_eq!(BracketRect::new(1, 3, 2, 4).upper_left(), upper_left);
+        assert_eq!(BracketRect::new(3, 1, 2, 4).upper_left(), upper_left);
+        assert_eq!(BracketRect::new(1, 3, 4, 2).upper_left(), upper_left);
+        assert_eq!(BracketRect::new(3, 1, 4, 2).upper_left(), upper_left);
     }
 
     #[test]
@@ -174,7 +174,7 @@ mod tests {
     fn test_move_to_point() {
         assert_eq!(
             rect0179().moved_to_point(Point::new(2, 3)),
-            Rect::new(2, 9, 3, 11)
+            BracketRect::new(2, 9, 3, 11)
         );
     }
 
@@ -182,7 +182,7 @@ mod tests {
     fn test_center_at_point() {
         assert_eq!(
             rect0179().centered_at_point(Point::new(5, 6)),
-            Rect::new(2, 9, 2, 10)
+            BracketRect::new(2, 9, 2, 10)
         );
     }
 
@@ -190,15 +190,18 @@ mod tests {
     fn test_intersection() {
         assert_eq!(
             rect1234().intersection(&rect0179()),
-            Some(Rect::new(1, 3, 2, 4))
+            Some(BracketRect::new(1, 3, 2, 4))
         );
 
         assert_eq!(
-            Rect::new(2, 10, 5, 23).intersection(&rect0179()),
-            Some(Rect::new(2, 7, 5, 9))
+            BracketRect::new(2, 10, 5, 23).intersection(&rect0179()),
+            Some(BracketRect::new(2, 7, 5, 9))
         );
 
-        assert_eq!(Rect::new(21, 22, 23, 24).intersection(&rect0179()), None);
+        assert_eq!(
+            BracketRect::new(21, 22, 23, 24).intersection(&rect0179()),
+            None
+        );
     }
 
     #[test]

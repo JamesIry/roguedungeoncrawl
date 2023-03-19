@@ -13,52 +13,67 @@ mod use_items;
 use crate::prelude::*;
 
 pub fn build_input_scheduler() -> Schedule {
-    Schedule::builder()
-        .add_system(player_input::player_input_system())
-        .flush()
-        .add_system(fov::fov_system())
-        .flush()
-        .add_system(map_renderer::map_renderer_system())
-        .add_system(entity_renderer::entity_renderer_system())
-        .add_system(hud::hud_system())
-        .add_system(tooltips::tooltips_system())
-        .build()
+    let mut schedule = Schedule::new();
+    schedule.add_systems(
+        (
+            player_input::player_input_system,
+            apply_system_buffers,
+            fov::fov_system,
+            apply_system_buffers,
+            map_renderer::map_renderer_system,
+            entity_renderer::entity_renderer_system,
+            hud::hud_system,
+            tooltips::tooltips_system,
+        )
+            .chain(),
+    );
+    schedule
 }
 
 pub fn build_player_scheduler() -> Schedule {
-    Schedule::builder()
-        .add_system(use_items::use_items_system())
-        .flush()
-        .add_system(combat::combat_system())
-        .flush()
-        .add_system(movement::movement_system())
-        .flush()
-        .add_system(fov::fov_system())
-        .flush()
-        .add_system(map_renderer::map_renderer_system())
-        .add_system(entity_renderer::entity_renderer_system())
-        .add_system(hud::hud_system())
-        .add_system(tooltips::tooltips_system())
-        .add_system(end_turn::end_turn_system())
-        .build()
+    let mut schedule = Schedule::new();
+    schedule.add_systems(
+        (
+            use_items::use_items_system,
+            apply_system_buffers,
+            combat::combat_system,
+            apply_system_buffers,
+            movement::movement_system,
+            apply_system_buffers,
+            fov::fov_system,
+            apply_system_buffers,
+            map_renderer::map_renderer_system,
+            entity_renderer::entity_renderer_system,
+            hud::hud_system,
+            tooltips::tooltips_system,
+            end_turn::end_turn_system,
+        )
+            .chain(),
+    );
+    schedule
 }
 
 pub fn build_monster_scheduler() -> Schedule {
-    Schedule::builder()
-        .add_system(use_items::use_items_system())
-        .flush()
-        .add_system(chasing::chasing_system())
-        .flush()
-        .add_system(combat::combat_system())
-        .flush()
-        .add_system(movement::movement_system())
-        .flush()
-        .add_system(fov::fov_system())
-        .flush()
-        .add_system(map_renderer::map_renderer_system())
-        .add_system(entity_renderer::entity_renderer_system())
-        .add_system(hud::hud_system())
-        .add_system(tooltips::tooltips_system())
-        .add_system(end_turn::end_turn_system())
-        .build()
+    let mut schedule = Schedule::new();
+    schedule.add_systems(
+        (
+            use_items::use_items_system,
+            apply_system_buffers,
+            chasing::chasing_system,
+            apply_system_buffers,
+            combat::combat_system,
+            apply_system_buffers,
+            movement::movement_system,
+            apply_system_buffers,
+            fov::fov_system,
+            apply_system_buffers,
+            map_renderer::map_renderer_system,
+            entity_renderer::entity_renderer_system,
+            hud::hud_system,
+            tooltips::tooltips_system,
+            end_turn::end_turn_system,
+        )
+            .chain(),
+    );
+    schedule
 }
