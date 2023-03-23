@@ -41,7 +41,9 @@ struct State {
 impl State {
     fn new(gamedata: GameData) -> Self {
         let mut ecs = World::new();
-        start_game(&mut ecs, gamedata);
+        ecs.insert_resource(gamedata);
+
+        init_game(&mut ecs);
         Self {
             ecs,
             input_systems: build_input_scheduler(),
@@ -49,170 +51,6 @@ impl State {
             monster_systems: build_monster_scheduler(),
         }
     }
-
-    fn game_over(&mut self, ctx: &mut BTerm) {
-        ctx.set_active_console(2);
-        ctx.print_color_centered(2, RED, BLACK, "Your quest has ended");
-        ctx.print_color_centered(
-            4,
-            WHITE,
-            BLACK,
-            "Slain by a monster, your hero's journey has come to a premature end.",
-        );
-        ctx.print_color_centered(
-            5,
-            WHITE,
-            BLACK,
-            "The Amulet of Yala remains unclaimed, and your home town is not saved.",
-        );
-        ctx.print_color_centered(
-            8,
-            YELLOW,
-            BLACK,
-            "Don't worry, you can always try again with a new hero.",
-        );
-        ctx.print_color_centered(9, GREEN, BLACK, "Press 1 to play again.");
-
-        if let Some(VirtualKeyCode::Key1) = ctx.key {
-            let gamedata = self.ecs.get_resource::<GameData>().unwrap().clone();
-
-            start_game(&mut self.ecs, gamedata);
-        }
-    }
-
-    fn victory(&mut self, ctx: &mut BTerm) {
-        let gamedata = self.ecs.get_resource::<GameData>().unwrap().to_owned();
-
-        ctx.set_active_console(2);
-        ctx.print_color_centered(2, GREEN, BLACK, "You have won!");
-        ctx.print_color_centered(
-            4,
-            WHITE,
-            BLACK,
-            "You put on the Amulet of Yala and feel its power course through your veins.",
-        );
-        ctx.print_color_centered(
-            5,
-            WHITE,
-            BLACK,
-            "Your town is saved and you can return to your normal life.",
-        );
-        ctx.print_color_centered(7, GREEN, BLACK, "Press 1 to play again.");
-
-        if let Some(VirtualKeyCode::Key1) = ctx.key {
-            start_game(&mut self.ecs, gamedata);
-        }
-    }
-
-    fn advance_level(&mut self) {
-        let ecs = &mut self.ecs;
-
-        let (player_entity, mut player) = ecs.query::<(Entity, &mut Player)>().single_mut(ecs);
-
-        let new_map_level = player.map_level + 1;
-        player.map_level = new_map_level;
-
-        use std::collections::HashSet;
-
-        let mut entities_to_keep = HashSet::new();
-        entities_to_keep.insert(player_entity);
-
-        ecs.query::<(Entity, &Carried)>()
-            .iter(ecs)
-            .filter(|(_item, Carried(carrier))| *carrier == player_entity)
-            .for_each(|(item, _carried)| {
-                entities_to_keep.insert(item);
-            });
-
-        let mut entities_to_remove = Vec::new();
-
-        for entity in ecs.query::<Entity>().iter_mut(ecs) {
-            if !entities_to_keep.contains(&entity) {
-                entities_to_remove.push(entity);
-            }
-        }
-
-        for entity in entities_to_remove {
-            ecs.despawn(entity);
-        }
-        let gamedata = ecs.get_resource::<GameData>().unwrap().to_owned();
-
-        let player_start = start_level(ecs, new_map_level, &gamedata);
-
-        let (mut player_pos, mut player_fov) = ecs
-            .query_filtered::<(&mut Position, &mut FieldOfView), With<Player>>()
-            .single_mut(&mut self.ecs);
-
-        player_pos.0.x = player_start.x;
-        player_pos.0.y = player_start.y;
-        player_fov.is_dirty = true;
-    }
-}
-
-fn start_game(ecs: &mut World, gamedata: GameData) {
-    ecs.clear_all();
-
-    let new_gamedata = gamedata.clone();
-    ecs.insert_resource(new_gamedata);
-
-    let player_start = start_level(ecs, 0, &gamedata);
-    gamedata.spawn_player(ecs, player_start);
-}
-
-fn start_level(ecs: &mut World, map_level: usize, gamedata: &GameData) -> Point {
-    let mut rng = RandomNumberGenerator::new();
-
-    let map_level_def = &gamedata.game_levels[map_level];
-
-    let map_builder = map_level_def.get_builder(gamedata);
-
-    let BuiltMap {
-        mut map,
-        mut entity_spawns,
-        player_start,
-        amulet_start,
-    } = map_builder.build(
-        &mut rng,
-        gamedata.map_width,
-        gamedata.map_height,
-        gamedata.num_monsters,
-    );
-
-    gamedata.apply_prefab(
-        &mut map,
-        &mut rng,
-        player_start,
-        amulet_start,
-        &mut entity_spawns,
-    );
-
-    let theme = map_level_def.get_theme(gamedata);
-    ecs.insert_resource(*theme);
-    ecs.insert_resource(MapInfo {
-        name: map_level_def.name.clone(),
-    });
-
-    let mut camera = DCCamera::new(
-        gamedata.tile_display_width(),
-        gamedata.tile_display_height(),
-        gamedata.map_width,
-        gamedata.map_height,
-    );
-    camera.center_on_point(player_start);
-    ecs.insert_resource(camera);
-
-    // spawn stuff
-    if map_level >= gamedata.game_levels.len() - 1 {
-        gamedata.spawn_amulet_of_yala(ecs, amulet_start);
-    } else {
-        map.set_tile(amulet_start, TileType::Exit);
-    }
-
-    gamedata.spawn_entities(ecs, &mut rng, map_level, &entity_spawns);
-
-    ecs.insert_resource(map);
-    ecs.insert_resource(TurnState::AwaitingInput);
-    player_start
 }
 
 impl GameState for State {
@@ -236,15 +74,15 @@ impl GameState for State {
             TurnState::PlayerTurn => Some(&mut self.player_systems),
             TurnState::MonsterTurn => Some(&mut self.monster_systems),
             TurnState::GameOver => {
-                self.game_over(ctx);
+                game_over(ctx, &mut self.ecs);
                 None
             }
             TurnState::Victory => {
-                self.victory(ctx);
+                victory(ctx, &mut self.ecs);
                 None
             }
             TurnState::NextLevel => {
-                self.advance_level();
+                advance_level(&mut self.ecs);
                 None
             }
         };
@@ -252,6 +90,174 @@ impl GameState for State {
             schedule.run(&mut self.ecs);
             render_draw_buffer(ctx).expect("Render error");
         }
+    }
+}
+
+fn init_game(ecs: &mut World) {
+    let gamedata = ecs.resource::<GameData>().to_owned();
+
+    ecs.clear_all();
+
+    ecs.insert_resource(gamedata);
+
+    init_level(ecs);
+}
+
+fn advance_level(ecs: &mut World) {
+    let (player_entity, mut player) = ecs.query::<(Entity, &mut Player)>().single_mut(ecs);
+    player.map_level += 1;
+
+    use std::collections::HashSet;
+
+    let mut entities_to_keep = HashSet::new();
+    entities_to_keep.insert(player_entity);
+
+    ecs.query::<(Entity, &Carried)>()
+        .iter(ecs)
+        .filter(|(_item, Carried(carrier))| *carrier == player_entity)
+        .for_each(|(item, _carried)| {
+            entities_to_keep.insert(item);
+        });
+
+    let mut entities_to_remove = Vec::new();
+
+    for entity in ecs.query::<Entity>().iter_mut(ecs) {
+        if !entities_to_keep.contains(&entity) {
+            entities_to_remove.push(entity);
+        }
+    }
+
+    for entity in entities_to_remove {
+        ecs.despawn(entity);
+    }
+
+    init_level(ecs);
+}
+
+fn init_level(ecs: &mut World) {
+    let player_opt = ecs.query::<&Player>().get_single(ecs);
+
+    let map_level = if let Ok(player) = player_opt {
+        player.map_level
+    } else {
+        0
+    };
+
+    let gamedata = ecs.resource::<GameData>().clone();
+
+    let mut rng = RandomNumberGenerator::new();
+
+    let map_level_def = &gamedata.game_levels[map_level];
+
+    let map_builder = map_level_def.get_builder(&gamedata);
+
+    let BuiltMap {
+        mut map,
+        mut entity_spawns,
+        player_start,
+        amulet_start,
+    } = map_builder.build(
+        &mut rng,
+        gamedata.map_width,
+        gamedata.map_height,
+        gamedata.num_monsters,
+    );
+
+    gamedata.apply_prefab(
+        &mut map,
+        &mut rng,
+        player_start,
+        amulet_start,
+        &mut entity_spawns,
+    );
+
+    let theme = map_level_def.get_theme(&gamedata);
+    ecs.insert_resource(*theme);
+    ecs.insert_resource(MapInfo {
+        name: map_level_def.name.clone(),
+    });
+
+    let mut camera = DCCamera::new(
+        gamedata.tile_display_width(),
+        gamedata.tile_display_height(),
+        gamedata.map_width,
+        gamedata.map_height,
+    );
+    camera.center_on_point(player_start);
+    ecs.insert_resource(camera);
+
+    // spawn stuff
+    if map_level >= gamedata.game_levels.len() - 1 {
+        gamedata.spawn_amulet_of_yala(ecs, amulet_start);
+    } else {
+        map.set_tile(amulet_start, TileType::Exit);
+    }
+
+    let player_opt = ecs
+        .query_filtered::<(&mut Position, &mut FieldOfView), With<Player>>()
+        .get_single_mut(ecs);
+    // spawn a player if there isn't already one, otherwise move the player
+    // to the new starting location
+    if let Ok((mut player_pos, mut player_fov)) = player_opt {
+        player_pos.0.x = player_start.x;
+        player_pos.0.y = player_start.y;
+        player_fov.is_dirty = true;
+    } else {
+        gamedata.spawn_player(ecs, player_start);
+    }
+    gamedata.spawn_entities(ecs, &mut rng, map_level, &entity_spawns);
+
+    ecs.insert_resource(map);
+    ecs.insert_resource(TurnState::AwaitingInput);
+}
+
+fn game_over(ctx: &mut BTerm, ecs: &mut World) {
+    ctx.set_active_console(2);
+    ctx.print_color_centered(2, RED, BLACK, "Your quest has ended");
+    ctx.print_color_centered(
+        4,
+        WHITE,
+        BLACK,
+        "Slain by a monster, your hero's journey has come to a premature end.",
+    );
+    ctx.print_color_centered(
+        5,
+        WHITE,
+        BLACK,
+        "The Amulet of Yala remains unclaimed, and your home town is not saved.",
+    );
+    ctx.print_color_centered(
+        8,
+        YELLOW,
+        BLACK,
+        "Don't worry, you can always try again with a new hero.",
+    );
+    ctx.print_color_centered(9, GREEN, BLACK, "Press 1 to play again.");
+
+    if let Some(VirtualKeyCode::Key1) = ctx.key {
+        init_game(ecs);
+    }
+}
+
+fn victory(ctx: &mut BTerm, ecs: &mut World) {
+    ctx.set_active_console(2);
+    ctx.print_color_centered(2, GREEN, BLACK, "You have won!");
+    ctx.print_color_centered(
+        4,
+        WHITE,
+        BLACK,
+        "You put on the Amulet of Yala and feel its power course through your veins.",
+    );
+    ctx.print_color_centered(
+        5,
+        WHITE,
+        BLACK,
+        "Your town is saved and you can return to your normal life.",
+    );
+    ctx.print_color_centered(7, GREEN, BLACK, "Press 1 to play again.");
+
+    if let Some(VirtualKeyCode::Key1) = ctx.key {
+        init_game(ecs);
     }
 }
 

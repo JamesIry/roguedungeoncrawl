@@ -24,7 +24,6 @@ pub fn use_items_system(
                 .filter(|(item_entity, _, _)| *item_entity == activation.item)
                 .for_each(|(_, optional_healing, optional_map)| {
                     if let Some(healing) = optional_healing {
-                        //  healing_to_apply.push((activate.used_by, healing.amount));
                         for (_, mut health) in
                             healed.iter_mut().filter(|h| h.0 == activation.used_by)
                         {
