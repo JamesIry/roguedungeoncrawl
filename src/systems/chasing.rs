@@ -5,9 +5,9 @@ pub fn chasing_system(
     mut commands: Commands,
     movers: Query<(Entity, &Position, &ChasingPlayer, &FieldOfView)>,
     positions: Query<(Entity, &Position, &Health, Option<&Player>)>,
-    player: Query<(&Position, &Player)>,
+    player: Query<&Position, With<Player>>,
 ) {
-    if let Some((player_pos, _)) = player.iter().next() {
+    if let Ok(player_pos) = player.get_single() {
         let player_idx = map.point2d_to_index(player_pos.0);
 
         let search_targets = vec![player_idx];

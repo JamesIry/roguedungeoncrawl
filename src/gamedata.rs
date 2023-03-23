@@ -62,7 +62,7 @@ impl GameData {
 
     pub fn spawn_entities(
         &self,
-        ecs: &mut World,
+        commands: &mut Commands,
         rng: &mut RandomNumberGenerator,
         level: usize,
         spawn_points: &[Point],
@@ -79,13 +79,13 @@ impl GameData {
 
         spawn_points.iter().for_each(|pt| {
             if let Some(template) = rng.random_slice_entry(&available_entities) {
-                self.spawn_entity(*pt, template, ecs);
+                self.spawn_entity(*pt, template, commands);
             }
         });
     }
 
-    fn spawn_entity(&self, pt: Point, template: &EntityTemplate, ecs: &mut World) {
-        let mut entity = ecs.spawn((
+    fn spawn_entity(&self, pt: Point, template: &EntityTemplate, commands: &mut Commands) {
+        let mut entity = commands.spawn((
             Position(pt),
             Render {
                 color: ColorPair::new(WHITE, BLACK),
@@ -131,8 +131,8 @@ impl GameData {
         }
     }
 
-    pub fn spawn_player(&self, ecs: &mut World, pos: Point) {
-        ecs.spawn((
+    pub fn spawn_player(&self, commands: &mut Commands, pos: Point) {
+        commands.spawn((
             Player { map_level: 0 },
             Position(pos),
             Render {
@@ -148,8 +148,8 @@ impl GameData {
         ));
     }
 
-    pub fn spawn_amulet_of_yala(&self, ecs: &mut World, pos: Point) {
-        ecs.spawn((
+    pub fn spawn_amulet_of_yala(&self, commands: &mut Commands, pos: Point) {
+        commands.spawn((
             Item,
             AmuletOfYala,
             Position(pos),
