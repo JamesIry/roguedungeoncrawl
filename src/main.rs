@@ -1,5 +1,6 @@
 #![allow(clippy::type_complexity)] // queries create complex types
 
+mod bterm_plugin;
 mod camera;
 mod components;
 mod gamedata;
@@ -30,70 +31,8 @@ mod prelude {
 
 use std::env::args;
 
+use bterm_plugin::{BTermPlugin, BTermResource};
 use prelude::*;
-
-struct State {
-    ecs: World,
-    init_game_systems: Schedule,
-    advance_level_systems: Schedule,
-    init_level_systems: Schedule,
-    input_systems: Schedule,
-    player_systems: Schedule,
-    monster_systems: Schedule,
-    game_over_systems: Schedule,
-    victory_systems: Schedule,
-}
-impl State {
-    fn new(gamedata: GameData) -> Self {
-        let mut ecs = World::new();
-        ecs.insert_resource(gamedata);
-        ecs.insert_resource(TurnState::InitGame);
-
-        Self {
-            ecs,
-            init_game_systems: build_init_game_scheduler(),
-            advance_level_systems: build_advance_level_scheduler(),
-            init_level_systems: build_init_level_scheduler(),
-            input_systems: build_input_scheduler(),
-            player_systems: build_player_scheduler(),
-            monster_systems: build_monster_scheduler(),
-            game_over_systems: build_game_over_scheduler(),
-            victory_systems: build_victory_scheduler(),
-        }
-    }
-}
-
-impl GameState for State {
-    fn tick(&mut self, ctx: &mut BTerm) {
-        for console in 0..=2 {
-            ctx.set_active_console(console);
-            ctx.cls();
-        }
-
-        self.ecs.insert_resource(KeyPress(ctx.key));
-        ctx.set_active_console(0);
-        self.ecs
-            .insert_resource(Position(Point::from_tuple(ctx.mouse_pos())));
-
-        let current_state = self
-            .ecs
-            .get_resource::<TurnState>()
-            .unwrap_or(&TurnState::AwaitingInput);
-        let schedule = match current_state {
-            TurnState::InitGame => &mut self.init_game_systems,
-            TurnState::NextLevel => &mut self.advance_level_systems,
-            TurnState::InitLevel => &mut self.init_level_systems,
-            TurnState::AwaitingInput => &mut self.input_systems,
-            TurnState::PlayerTurn => &mut self.player_systems,
-            TurnState::MonsterTurn => &mut self.monster_systems,
-            TurnState::GameOver => &mut self.game_over_systems,
-            TurnState::Victory => &mut self.victory_systems,
-        };
-
-        schedule.run(&mut self.ecs);
-        render_draw_buffer(ctx).expect("Render error");
-    }
-}
 
 fn main() -> BError {
     let args = args().collect::<Vec<String>>();
@@ -136,7 +75,18 @@ fn main() -> BError {
                 &gamedata.text_font_file,
             )
             .build()?;
-        main_loop(context, State::new(gamedata))
+
+        let mut app = App::new();
+        app.add_plugins(MinimalPlugins)
+            .add_plugin(BTermPlugin)
+            .add_state::<TurnState>()
+            .insert_resource(BTermResource(context));
+
+        build_game_schedule(&mut app);
+
+        app.run();
+
+        Ok(())
     }
 }
 

@@ -5,7 +5,7 @@ use crate::prelude::*;
 pub fn player_input_system(
     mut commands: Commands,
     key: Res<KeyPress>,
-    mut turn_state: ResMut<TurnState>,
+    mut next_state: ResMut<NextState<TurnState>>,
     mut players: Query<(Entity, &Position), (With<Player>, Without<Item>, Without<Enemy>)>,
     items: Query<
         (Entity, Option<&Position>, &DCName, Option<&Carried>),
@@ -75,7 +75,7 @@ pub fn player_input_system(
             }
         }
 
-        *turn_state = TurnState::PlayerTurn;
+        next_state.set(TurnState::PlayerTurn);
     }
 }
 

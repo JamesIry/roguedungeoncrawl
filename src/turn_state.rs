@@ -1,7 +1,8 @@
 use crate::prelude::*;
 
-#[derive(Copy, Clone, Debug, PartialEq, Resource)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, States, Default)]
 pub enum TurnState {
+    #[default]
     InitGame,
     NextLevel,
     InitLevel,
