@@ -1,6 +1,9 @@
 use crate::prelude::*;
 
-pub fn victory_system(mut next_state: ResMut<NextState<TurnState>>, key_press: Res<KeyPress>) {
+pub fn victory_system(
+    mut next_state: ResMut<NextState<TurnState>>,
+    key_press: Res<Input<KeyCode>>,
+) {
     let mut draw_batch = DrawBatch::new();
 
     draw_batch.target(2);
@@ -19,7 +22,7 @@ pub fn victory_system(mut next_state: ResMut<NextState<TurnState>>, key_press: R
 
     draw_batch.submit(10000).expect("Batch error");
 
-    if let Some(VirtualKeyCode::Key1) = key_press.0 {
+    if key_press.pressed(KeyCode::Key1) {
         next_state.set(TurnState::InitGame);
     }
 }

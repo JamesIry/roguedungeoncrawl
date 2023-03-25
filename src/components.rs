@@ -91,9 +91,5 @@ pub struct Weapon {
 pub struct MapInfo {
     pub name: String,
 }
-
-#[derive(Clone, Debug, PartialEq, Resource)]
-pub struct KeyPress(pub Option<VirtualKeyCode>);
-
 #[derive(Clone, Debug, PartialEq, Component, Resource)]
 pub struct Position(pub Point);

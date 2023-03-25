@@ -14,8 +14,16 @@ impl GameState for BTermState {
             ctx.cls();
         }
 
-        self.app.insert_resource(KeyPress(ctx.key));
         ctx.set_active_console(0);
+
+        let mut keyboard_input = self.app.world.resource_mut::<Input<KeyCode>>();
+        keyboard_input.reset_all();
+        let key = ctx.key;
+        if let Some(virtual_key_code) = key {
+            let key_code: KeyCode = unsafe { std::mem::transmute(virtual_key_code as u32) };
+            keyboard_input.press(key_code);
+        }
+
         self.app
             .insert_resource(Position(Point::from_tuple(ctx.mouse_pos())));
 
@@ -29,6 +37,7 @@ impl GameState for BTermState {
 
 fn bterm_runner(mut app: App) {
     let context = app
+        .init_resource::<Input<KeyCode>>()
         .world
         .remove_resource::<BTermResource>()
         .expect("BTerm context doesn't exist in the world, which is required in order to run");

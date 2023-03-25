@@ -36,7 +36,6 @@ mod prelude {
     pub type BracketRect = bracket_lib::geometry::Rect;
     pub use bracket_lib::pathfinding::field_of_view_set;
     pub use bracket_lib::pathfinding::DijkstraMap;
-    pub use bracket_lib::prelude::VirtualKeyCode;
     pub use bracket_lib::terminal::main_loop;
     pub use bracket_lib::terminal::render_draw_buffer;
     pub use bracket_lib::terminal::to_cp437;
