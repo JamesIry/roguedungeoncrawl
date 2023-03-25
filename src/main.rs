@@ -22,9 +22,28 @@ mod prelude {
     pub use crate::systems::*;
     pub use crate::turn_state::*;
     pub use bevy::prelude::*;
-    pub use bracket_lib::prelude::*;
 
+    pub use bracket_lib::algorithm_traits::Algorithm2D;
+    pub use bracket_lib::algorithm_traits::BaseMap;
+    pub use bracket_lib::algorithm_traits::SmallVec;
+    pub use bracket_lib::color::*;
+    pub use bracket_lib::geometry::DistanceAlg;
+    pub use bracket_lib::geometry::Point;
     pub type BracketRect = bracket_lib::geometry::Rect;
+    pub use bracket_lib::pathfinding::field_of_view_set;
+    pub use bracket_lib::pathfinding::DijkstraMap;
+    pub use bracket_lib::prelude::VirtualKeyCode;
+    pub use bracket_lib::random::RandomNumberGenerator;
+    pub use bracket_lib::terminal::main_loop;
+    pub use bracket_lib::terminal::render_draw_buffer;
+    pub use bracket_lib::terminal::to_cp437;
+    pub use bracket_lib::terminal::BError;
+    pub use bracket_lib::terminal::BTerm;
+    pub use bracket_lib::terminal::BTermBuilder;
+    pub use bracket_lib::terminal::ColorPair;
+    pub use bracket_lib::terminal::DrawBatch;
+    pub use bracket_lib::terminal::GameState;
+
     pub type DCCamera = crate::camera::Camera;
     pub type DCName = crate::components::Name;
 }
