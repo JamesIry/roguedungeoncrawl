@@ -141,7 +141,7 @@ impl Map {
         BracketRect::with_size(1, 1, self.width() - 2, self.height() - 2)
     }
 
-    pub fn connect_disconnected(&mut self, player_pos: Point, rng: &mut RandomNumberGenerator) {
+    pub fn connect_disconnected(&mut self, player_pos: Point, rng: &mut ThreadRng) {
         let mut have_unreachable = true;
         let walled_rect = self.walled_rect();
         while have_unreachable {
@@ -165,7 +165,7 @@ impl Map {
                         let target_point = self.index_to_point2d(target);
                         let diff = player_pos - target_point;
 
-                        let roll = rng.range(0, diff.x.abs() + diff.y.abs() + 2);
+                        let roll = rng.gen_range(0..diff.x.abs() + diff.y.abs() + 2);
                         let delta = if roll < diff.x.abs() + 1 {
                             Point::new(diff.x.signum(), 0)
                         } else {

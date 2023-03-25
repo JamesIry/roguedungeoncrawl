@@ -6,6 +6,7 @@ mod components;
 mod gamedata;
 mod map;
 mod map_builder;
+mod random;
 mod rect;
 mod systems;
 mod turn_state;
@@ -18,10 +19,13 @@ mod prelude {
     pub use crate::gamedata::*;
     pub use crate::map::*;
     pub use crate::map_builder::prelude::*;
+    pub use crate::random::*;
     pub use crate::rect::*;
     pub use crate::systems::*;
     pub use crate::turn_state::*;
     pub use bevy::prelude::*;
+    pub use rand::rngs::ThreadRng;
+    pub use rand::Rng;
 
     pub use bracket_lib::algorithm_traits::Algorithm2D;
     pub use bracket_lib::algorithm_traits::BaseMap;
@@ -33,7 +37,6 @@ mod prelude {
     pub use bracket_lib::pathfinding::field_of_view_set;
     pub use bracket_lib::pathfinding::DijkstraMap;
     pub use bracket_lib::prelude::VirtualKeyCode;
-    pub use bracket_lib::random::RandomNumberGenerator;
     pub use bracket_lib::terminal::main_loop;
     pub use bracket_lib::terminal::render_draw_buffer;
     pub use bracket_lib::terminal::to_cp437;
@@ -110,7 +113,7 @@ fn main() -> BError {
 }
 
 fn test_harness(gamedata: GameData) -> BError {
-    let mut rng = RandomNumberGenerator::new();
+    let mut rng = rand::thread_rng();
     let BuiltMap {
         mut map,
         mut entity_spawns,

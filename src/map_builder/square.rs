@@ -7,13 +7,7 @@ pub struct SquareMapBuilder {
     pub num_rooms: usize,
 }
 impl MapBuilder for SquareMapBuilder {
-    fn build(
-        &self,
-        rng: &mut RandomNumberGenerator,
-        width: i32,
-        height: i32,
-        num_monsters: usize,
-    ) -> BuiltMap {
+    fn build(&self, rng: &mut ThreadRng, width: i32, height: i32, num_monsters: usize) -> BuiltMap {
         let mut map = Map::new(width, height, TileType::Wall);
 
         let rooms = self.build_random_rooms(&mut map, rng);
@@ -31,19 +25,15 @@ impl MapBuilder for SquareMapBuilder {
     }
 }
 impl SquareMapBuilder {
-    fn build_random_rooms(
-        &self,
-        map: &mut Map,
-        rng: &mut RandomNumberGenerator,
-    ) -> Vec<BracketRect> {
+    fn build_random_rooms(&self, map: &mut Map, rng: &mut ThreadRng) -> Vec<BracketRect> {
         let mut rooms = Vec::<BracketRect>::with_capacity(self.num_rooms);
 
         while rooms.len() < self.num_rooms {
             let room = BracketRect::with_size(
-                rng.range(1, map.width() - 10),
-                rng.range(1, map.height() - 10),
-                rng.range(2, 10),
-                rng.range(2, 10),
+                rng.gen_range(1..map.width() - 10),
+                rng.gen_range(1..map.height() - 10),
+                rng.gen_range(2..10),
+                rng.gen_range(2..10),
             );
 
             let overlap_room = BracketRect::new(room.x1 - 1, room.x2 + 1, room.y1 - 1, room.y2 + 1);
@@ -81,14 +71,14 @@ impl SquareMapBuilder {
         ));
     }
 
-    fn build_corridors(map: &mut Map, rng: &mut RandomNumberGenerator, rooms: &Vec<BracketRect>) {
+    fn build_corridors(map: &mut Map, rng: &mut ThreadRng, rooms: &Vec<BracketRect>) {
         let index_pairs = (0..rooms.len() - 1).map(|fst| (fst, fst + 1));
 
         for (idx1, idx2) in index_pairs {
             let center1 = rooms[idx1].center();
             let center2 = rooms[idx2].center();
 
-            if rng.range(0, 2) == 1 {
+            if rng.gen_range(0..2) == 1 {
                 Self::apply_horizontal_tunnel(map, center1.x, center2.x, center1.y);
                 Self::apply_vertical_tunnel(map, center1.y, center2.y, center2.x);
             } else {

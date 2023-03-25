@@ -17,7 +17,7 @@ impl Prefab {
     pub fn apply_prefab(
         &self,
         map: &mut Map,
-        rng: &mut RandomNumberGenerator,
+        rng: &mut ThreadRng,
         player_start: Point,
         amulet_start: Point,
         entity_spawns: &mut Vec<Point>,
@@ -31,8 +31,8 @@ impl Prefab {
         let mut attempts = 0;
         while placement.is_none() && attempts < 10 {
             let dimensions = BracketRect::with_size(
-                rng.range(1, map.width() - width - 1),
-                rng.range(1, map.height() - height - 1),
+                rng.gen_range(1..map.width() - width - 1),
+                rng.gen_range(1..map.height() - height - 1),
                 width,
                 height,
             );

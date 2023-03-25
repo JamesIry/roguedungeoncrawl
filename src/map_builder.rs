@@ -17,13 +17,7 @@ pub mod prelude {
 }
 
 pub trait MapBuilder {
-    fn build(
-        &self,
-        rng: &mut RandomNumberGenerator,
-        width: i32,
-        height: i32,
-        num_monsters: usize,
-    ) -> BuiltMap;
+    fn build(&self, rng: &mut ThreadRng, width: i32, height: i32, num_monsters: usize) -> BuiltMap;
 }
 
 #[derive(Copy, Clone, Deserialize, Debug, Resource)]
@@ -61,7 +55,7 @@ pub struct BuiltMap {
 pub fn determine_entity_spawn_points(
     map: &Map,
     player_pos: Point,
-    rng: &mut RandomNumberGenerator,
+    rng: &mut ThreadRng,
     num_monsters: usize,
 ) -> Vec<Point> {
     let mut spawnable_tiles = map

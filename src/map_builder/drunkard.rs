@@ -8,19 +8,13 @@ pub struct DrunkardWalkMapBuilder {
 }
 
 impl MapBuilder for DrunkardWalkMapBuilder {
-    fn build(
-        &self,
-        rng: &mut RandomNumberGenerator,
-        width: i32,
-        height: i32,
-        num_monsters: usize,
-    ) -> BuiltMap {
+    fn build(&self, rng: &mut ThreadRng, width: i32, height: i32, num_monsters: usize) -> BuiltMap {
         let mut map = Map::new(width, height, TileType::Wall);
         let desired_cleared = ((map.width() * map.height()) as f32 * self.cleared_ratio) as i32;
         let mut cleared = 0;
 
         while cleared < desired_cleared {
-            let start = Point::new(rng.range(1, width - 1), rng.range(1, height - 1));
+            let start = Point::new(rng.gen_range(1..width - 1), rng.gen_range(1..height - 1));
             cleared += self.drunkard(&mut map, start, rng);
         }
 
@@ -40,7 +34,7 @@ impl MapBuilder for DrunkardWalkMapBuilder {
 }
 
 impl DrunkardWalkMapBuilder {
-    fn drunkard(&self, map: &mut Map, start: Point, rng: &mut RandomNumberGenerator) -> i32 {
+    fn drunkard(&self, map: &mut Map, start: Point, rng: &mut ThreadRng) -> i32 {
         let walled_rect = map.walled_rect();
         let mut drunkard_pos = start;
         let mut cleared = 0;
@@ -49,7 +43,7 @@ impl DrunkardWalkMapBuilder {
         while staggered < self.stagger_distance {
             let drunk_idx = map.point2d_to_index(drunkard_pos);
             map.tiles[drunk_idx] = TileType::Floor;
-            let roll = rng.range(0, 4);
+            let roll = rng.gen_range(0..4);
             let delta = Point::from_tuple(CARDINALS[roll]);
             let new_pos = drunkard_pos + delta;
 

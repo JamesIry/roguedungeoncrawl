@@ -11,7 +11,7 @@ pub fn init_level_system(
         0
     };
 
-    let mut rng = RandomNumberGenerator::new();
+    let mut rng = rand::thread_rng();
 
     let map_level_def = &gamedata.game_levels[map_level];
 

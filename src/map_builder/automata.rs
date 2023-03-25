@@ -6,13 +6,7 @@ pub struct CellularAutomataMapBuilder {
     pub num_iterations: i32,
 }
 impl MapBuilder for CellularAutomataMapBuilder {
-    fn build(
-        &self,
-        rng: &mut RandomNumberGenerator,
-        width: i32,
-        height: i32,
-        num_monsters: usize,
-    ) -> BuiltMap {
+    fn build(&self, rng: &mut ThreadRng, width: i32, height: i32, num_monsters: usize) -> BuiltMap {
         let mut map = Self::random_noise_map(width, height, rng);
 
         for _ in 0..self.num_iterations {
@@ -34,11 +28,11 @@ impl MapBuilder for CellularAutomataMapBuilder {
 }
 
 impl CellularAutomataMapBuilder {
-    fn random_noise_map(width: i32, height: i32, rng: &mut RandomNumberGenerator) -> Map {
+    fn random_noise_map(width: i32, height: i32, rng: &mut ThreadRng) -> Map {
         let mut map = Map::new(width, height, TileType::Wall);
         for y in 1..height - 1 {
             for x in 1..width - 1 {
-                let roll = rng.range(0, 100);
+                let roll = rng.gen_range(0..100);
                 if roll > 45 {
                     let index = map.index_from_point(Point::new(x, y));
                     map.tiles[index] = TileType::Floor;

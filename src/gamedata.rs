@@ -63,7 +63,7 @@ impl GameData {
     pub fn spawn_entities(
         &self,
         commands: &mut Commands,
-        rng: &mut RandomNumberGenerator,
+        rng: &mut ThreadRng,
         level: usize,
         spawn_points: &[Point],
     ) {
@@ -164,7 +164,7 @@ impl GameData {
     pub fn apply_prefab(
         &self,
         map: &mut Map,
-        rng: &mut RandomNumberGenerator,
+        rng: &mut ThreadRng,
         player_start: Point,
         amulet_start: Point,
         entity_spawns: &mut Vec<Point>,
