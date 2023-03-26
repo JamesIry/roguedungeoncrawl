@@ -11,7 +11,7 @@ pub fn chasing_system(
         let player_idx = map.point2d_to_index(player_pos.0);
 
         let search_targets = vec![player_idx];
-        let djikstra_map = DijkstraMap::new(
+        let dijkstra_map = DijkstraMap::new(
             map.width(),
             map.height(),
             &search_targets,
@@ -24,9 +24,7 @@ pub fn chasing_system(
                 return;
             }
             let idx = map.point2d_to_index(pos.0);
-            if let Some(destination) =
-                DijkstraMap::find_lowest_exit(&djikstra_map, idx, map.as_ref())
-            {
+            if let Some(destination) = dijkstra_map.find_lowest_exit(idx, map.as_ref()) {
                 let distance = DistanceAlg::Pythagoras.distance2d(pos.0, player_pos.0);
                 let destination = if distance > 1.2 {
                     map.index_to_point2d(destination)

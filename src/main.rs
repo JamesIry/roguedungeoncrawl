@@ -18,6 +18,7 @@ mod prelude {
     pub use crate::camera::*;
     pub use crate::components::*;
     pub use crate::gamedata::*;
+    pub use crate::geometry::dijkstra::DijkstraMap;
     pub use crate::geometry::fov::field_of_view_set;
     pub use crate::map::*;
     pub use crate::map_builder::prelude::*;
@@ -37,7 +38,6 @@ mod prelude {
     pub use bracket_lib::geometry::DistanceAlg;
     pub use bracket_lib::geometry::Point;
     pub type BracketRect = bracket_lib::geometry::Rect;
-    pub use bracket_lib::pathfinding::DijkstraMap;
     pub use bracket_lib::terminal::main_loop;
     pub use bracket_lib::terminal::render_draw_buffer;
     pub use bracket_lib::terminal::to_cp437;
