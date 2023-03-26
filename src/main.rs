@@ -32,7 +32,6 @@ mod prelude {
 
     pub use bracket_lib::color::*;
     pub use bracket_lib::geometry::Point;
-    pub type BracketRect = bracket_lib::geometry::Rect;
     pub use bracket_lib::terminal::main_loop;
     pub use bracket_lib::terminal::render_draw_buffer;
     pub use bracket_lib::terminal::to_cp437;

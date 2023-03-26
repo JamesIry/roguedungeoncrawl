@@ -2,7 +2,7 @@ use crate::prelude::*;
 
 #[derive(PartialEq, Debug, Resource)]
 pub struct Camera {
-    view_rect: BracketRect,
+    view_rect: IRect,
     world_width: i32,
     world_height: i32,
 }
@@ -14,7 +14,7 @@ impl Camera {
         world_height: i32,
     ) -> Self {
         Self {
-            view_rect: BracketRect::with_size(0, 0, display_width, display_height),
+            view_rect: IRect::with_size(0, 0, display_width, display_height),
             world_width,
             world_height,
         }
@@ -44,7 +44,7 @@ impl Camera {
             y1 = y2 - self.view_rect.height();
         }
 
-        self.view_rect = BracketRect::new(x1, x2, y1, y2);
+        self.view_rect = IRect::new(x1, x2, y1, y2);
     }
 
     pub fn world_point_to_screen_point(&self, point: Point) -> Point {
@@ -55,7 +55,7 @@ impl Camera {
         self.view_rect.upper_left() + point
     }
 
-    pub fn intersection(&self, rect: &BracketRect) -> Option<BracketRect> {
+    pub fn intersection(&self, rect: &IRect) -> Option<IRect> {
         self.view_rect.intersection(rect)
     }
 }
@@ -69,7 +69,7 @@ mod tests {
         assert_eq!(
             DCCamera::new(20, 15, 23, 47),
             DCCamera {
-                view_rect: BracketRect::new(0, 20, 0, 15),
+                view_rect: IRect::new(0, 20, 0, 15),
                 world_width: 23,
                 world_height: 47
             }
@@ -80,7 +80,7 @@ mod tests {
     fn test_center_at_point() {
         let mut camera = DCCamera::new(20, 15, 100, 100);
         camera.center_on_point(Point::new(30, 25));
-        assert_eq!(camera.view_rect, BracketRect::new(20, 40, 18, 33));
+        assert_eq!(camera.view_rect, IRect::new(20, 40, 18, 33));
     }
 
     #[test]

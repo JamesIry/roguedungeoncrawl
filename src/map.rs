@@ -22,12 +22,12 @@ pub enum Revealed {
 #[derive(Resource)]
 pub struct Map {
     pub tiles: Vec<TileType>,
-    world_rect: BracketRect,
+    world_rect: IRect,
     pub revealed: Vec<Revealed>,
 }
 impl Map {
     pub fn new(width: i32, height: i32, tile: TileType) -> Self {
-        let rect = BracketRect::with_size(0, 0, width, height);
+        let rect = IRect::with_size(0, 0, width, height);
         let num_tiles = rect.max_index();
         Self {
             tiles: vec![tile; num_tiles],
@@ -70,7 +70,7 @@ impl Map {
         self.tiles[index] = tile;
     }
 
-    pub fn set_rect(&mut self, rect: BracketRect, tile: TileType) {
+    pub fn set_rect(&mut self, rect: IRect, tile: TileType) {
         rect.points().for_each(|point| {
             if point.x > 0
                 && point.x < self.world_rect.width() - 1
@@ -82,7 +82,7 @@ impl Map {
         });
     }
 
-    pub fn world_rect(&self) -> &BracketRect {
+    pub fn world_rect(&self) -> &IRect {
         &self.world_rect
     }
 
@@ -95,7 +95,7 @@ impl Map {
         }
     }
 
-    pub fn clear_rect(&mut self, rect: BracketRect) {
+    pub fn clear_rect(&mut self, rect: IRect) {
         self.set_rect(rect, TileType::Floor);
     }
 
@@ -136,8 +136,8 @@ impl Map {
         Point::new(self.width() / 2, self.height() / 2)
     }
 
-    pub fn walled_rect(&self) -> BracketRect {
-        BracketRect::with_size(1, 1, self.width() - 2, self.height() - 2)
+    pub fn walled_rect(&self) -> IRect {
+        IRect::with_size(1, 1, self.width() - 2, self.height() - 2)
     }
 
     pub fn connect_disconnected(&mut self, player_pos: Point, rng: &mut ThreadRng) {

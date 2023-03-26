@@ -30,7 +30,7 @@ impl Prefab {
 
         let mut attempts = 0;
         while placement.is_none() && attempts < 10 {
-            let dimensions = BracketRect::with_size(
+            let dimensions = IRect::with_size(
                 rng.gen_range(1..map.width() - width - 1),
                 rng.gen_range(1..map.height() - height - 1),
                 width,
@@ -38,7 +38,7 @@ impl Prefab {
             );
             let mut can_place = false;
 
-            dimensions.for_each(|pt| {
+            dimensions.points().for_each(|pt| {
                 let idx = map.point_to_index(pt);
                 let distance = djikstra_map.map[idx];
                 if distance < 2000.0 && distance > 20.0 && amulet_start != pt {
@@ -48,8 +48,7 @@ impl Prefab {
 
             if can_place {
                 placement = Some(Point::new(dimensions.x1, dimensions.y1));
-                let points = dimensions.point_set();
-                entity_spawns.retain(|pt| !points.contains(pt));
+                entity_spawns.retain(|pt| !dimensions.in_bounds(*pt));
             }
 
             attempts += 1;
