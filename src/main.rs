@@ -8,7 +8,6 @@ mod geometry;
 mod map;
 mod map_builder;
 mod random;
-mod rect;
 mod systems;
 mod turn_state;
 
@@ -20,10 +19,10 @@ mod prelude {
     pub use crate::gamedata::*;
     pub use crate::geometry::dijkstra::DijkstraMap;
     pub use crate::geometry::fov::field_of_view_set;
+    pub use crate::geometry::prelude::*;
     pub use crate::map::*;
     pub use crate::map_builder::prelude::*;
     pub use crate::random::*;
-    pub use crate::rect::*;
     pub use crate::systems::*;
     pub use crate::turn_state::*;
 
@@ -32,7 +31,6 @@ mod prelude {
     pub use rand::Rng;
 
     pub use bracket_lib::color::*;
-    pub use bracket_lib::geometry::DistanceAlg;
     pub use bracket_lib::geometry::Point;
     pub type BracketRect = bracket_lib::geometry::Rect;
     pub use bracket_lib::terminal::main_loop;

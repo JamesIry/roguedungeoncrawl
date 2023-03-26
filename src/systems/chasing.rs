@@ -25,7 +25,7 @@ pub fn chasing_system(
             }
             let idx = map.point_to_index(pos.0);
             if let Some(destination) = dijkstra_map.find_lowest_exit(idx, map.as_ref()) {
-                let distance = DistanceAlg::Pythagoras.distance2d(pos.0, player_pos.0);
+                let distance = pos.0.pythagorean_distance(player_pos.0);
                 let destination = if distance > 1.2 {
                     map.index_to_point(destination)
                 } else {

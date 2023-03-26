@@ -70,7 +70,7 @@ impl<'isb, 'mv> Quadrant<'isb, 'mv> {
 
     fn reveal(&mut self, tile: Point) {
         let transform = self.transform(tile);
-        if DistanceAlg::Pythagoras.distance2d(self.origin, transform) <= self.range {
+        if self.origin.pythagorean_distance(transform) <= self.range {
             (self.mark_visible)(transform);
         }
     }
@@ -84,7 +84,7 @@ impl<'isb, 'mv> Quadrant<'isb, 'mv> {
                 // points in range are actually shown. The overscan ensures that
                 // the logic doesn't try to reveal tiles that should be blocked by
                 // other tiles that are out of range
-                DistanceAlg::Pythagoras.distance2d(self.origin, transform) <= self.range + 2.0
+                self.origin.pythagorean_distance(transform) <= self.range + 2.0
                     && (self.is_blocked)(transform)
             }
         }
@@ -99,7 +99,7 @@ impl<'isb, 'mv> Quadrant<'isb, 'mv> {
                 // points in range are actually shown. The overscan ensures that
                 // the logic doesn't try to reveal tiles that should be blocked by
                 // other tiles that are out of range
-                DistanceAlg::Pythagoras.distance2d(self.origin, transform) <= self.range + 2.0
+                self.origin.pythagorean_distance(transform) <= self.range + 2.0
                     && !(self.is_blocked)(transform)
             }
         }

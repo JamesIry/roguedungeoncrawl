@@ -126,12 +126,7 @@ impl Map {
             .iter()
             .enumerate()
             .filter(|(_, t)| **t == TileType::Floor)
-            .map(|(idx, _)| {
-                (
-                    idx,
-                    DistanceAlg::Pythagoras.distance2d(point, self.index_to_point(idx)),
-                )
-            })
+            .map(|(idx, _)| (idx, point.pythagorean_distance(self.index_to_point(idx))))
             .min_by_key(|(_, distance)| FloatOrd(*distance))
             .map(|(idx, _)| self.index_to_point(idx))
             .unwrap_or(point)
@@ -160,7 +155,7 @@ impl Map {
                 })
                 .min_by_key(|idx| {
                     let point = self.index_to_point(idx.0);
-                    DistanceAlg::PythagorasSquared.distance2d(point, player_pos) as i32
+                    point.pythagorean_squared_distance(player_pos)
                 });
 
             match closest_unreachable {

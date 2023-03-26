@@ -40,7 +40,7 @@ pub fn map_renderer_system(
 }
 
 fn tint(point1: Point, point2: Point) -> (u8, u8, u8) {
-    let distance = DistanceAlg::Pythagoras.distance2d(point1, point2) as i32;
+    let distance = point1.pythagorean_distance(point2) as i32;
     let clamped = (distance - 3).clamp(0, 8);
     let c = (255 - clamped * 15).clamp(0, 255);
     (c as u8, c as u8, ((c * 3) / 4) as u8)
