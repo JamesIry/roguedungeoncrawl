@@ -4,6 +4,7 @@ mod bterm_plugin;
 mod camera;
 mod components;
 mod gamedata;
+mod geometry;
 mod map;
 mod map_builder;
 mod random;
@@ -17,12 +18,14 @@ mod prelude {
     pub use crate::camera::*;
     pub use crate::components::*;
     pub use crate::gamedata::*;
+    pub use crate::geometry::fov::field_of_view_set;
     pub use crate::map::*;
     pub use crate::map_builder::prelude::*;
     pub use crate::random::*;
     pub use crate::rect::*;
     pub use crate::systems::*;
     pub use crate::turn_state::*;
+
     pub use bevy::prelude::*;
     pub use rand::rngs::ThreadRng;
     pub use rand::Rng;
@@ -34,7 +37,6 @@ mod prelude {
     pub use bracket_lib::geometry::DistanceAlg;
     pub use bracket_lib::geometry::Point;
     pub type BracketRect = bracket_lib::geometry::Rect;
-    pub use bracket_lib::pathfinding::field_of_view_set;
     pub use bracket_lib::pathfinding::DijkstraMap;
     pub use bracket_lib::terminal::main_loop;
     pub use bracket_lib::terminal::render_draw_buffer;
