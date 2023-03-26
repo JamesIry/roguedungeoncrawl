@@ -36,15 +36,11 @@ impl DijkstraMap {
     }
 
     pub fn find_lowest_exit(&self, idx: usize, map: &Map) -> Option<usize> {
-        let mut exits: Vec<(usize, f32)> = map
-            .get_available_exits(idx)
+        map.get_available_exits(idx)
             .iter()
             .map(|(exit, _)| (*exit, self.map[*exit]))
             .filter(|(_, distance)| *distance < MAX)
-            .collect();
-
-        exits.sort_by_key(|(_, distance)| FloatOrd(*distance));
-
-        exits.iter().map(|(index, _)| *index).next()
+            .min_by_key(|(_, distance)| FloatOrd(*distance))
+            .map(|(index, _)| index)
     }
 }
