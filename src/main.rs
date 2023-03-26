@@ -31,9 +31,6 @@ mod prelude {
     pub use rand::rngs::ThreadRng;
     pub use rand::Rng;
 
-    pub use bracket_lib::algorithm_traits::Algorithm2D;
-    pub use bracket_lib::algorithm_traits::BaseMap;
-    pub use bracket_lib::algorithm_traits::SmallVec;
     pub use bracket_lib::color::*;
     pub use bracket_lib::geometry::DistanceAlg;
     pub use bracket_lib::geometry::Point;
@@ -160,10 +157,10 @@ pub fn display(
         output[idx] = theme.tile_to_render(*t, Revealed::Seen);
     });
 
-    output[map.point2d_to_index(*player_start)] = '@';
-    output[map.point2d_to_index(*amulet_start)] = 'A';
+    output[map.point_to_index(*player_start)] = '@';
+    output[map.point_to_index(*amulet_start)] = 'A';
     entity_spawns.iter().for_each(|p| {
-        output[map.point2d_to_index(*p)] = 'M';
+        output[map.point_to_index(*p)] = 'M';
     });
 
     print!("\x1B[2J"); // CLS!
@@ -173,7 +170,7 @@ pub fn display(
     );
     for y in 0..map.height() {
         for x in 0..map.width() {
-            match output[map.point2d_to_index(Point::new(x, y))] {
+            match output[map.point_to_index(Point::new(x, y))] {
                 '#' => print!("{}", "#".bright_green()),
                 '@' => print!("{}", "@".bright_yellow()),
                 'M' => print!("{}", "M".bright_red()),

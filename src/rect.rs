@@ -21,7 +21,7 @@ impl<'a> Iterator for RectIter<'a> {
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.current_index < self.max_index {
-            let result = Some(self.rect.point_from_index(self.current_index));
+            let result = Some(self.rect.index_to_point(self.current_index));
             self.current_index += 1;
             result
         } else {
@@ -33,9 +33,9 @@ impl<'a> Iterator for RectIter<'a> {
 pub trait RectExtension {
     fn max_index(&self) -> usize;
 
-    fn point_from_index(&self, index: usize) -> Point;
+    fn index_to_point(&self, index: usize) -> Point;
 
-    fn index_from_point(&self, point: Point) -> usize;
+    fn point_to_index(&self, point: Point) -> usize;
 
     fn points(&self) -> RectIter;
 
@@ -59,12 +59,13 @@ impl RectExtension for BracketRect {
         (self.width() * self.height()) as usize
     }
 
-    fn point_from_index(&self, index: usize) -> Point {
+    fn index_to_point(&self, index: usize) -> Point {
         let idx = index as i32;
         let offset = Point::new(idx % self.width(), idx / self.width());
         self.upper_left() + offset
     }
-    fn index_from_point(&self, point: Point) -> usize {
+
+    fn point_to_index(&self, point: Point) -> usize {
         let offset = self.offset_of(point);
         (offset.y * self.width() + offset.x) as usize
     }
@@ -209,10 +210,10 @@ mod tests {
         assert_eq!(rect1234().max_index(), 4);
         assert_eq!(rect0179().max_index(), 56);
 
-        assert_eq!(rect0179().point_from_index(0), Point::new(0, 1));
-        assert_eq!(rect0179().point_from_index(6), Point::new(6, 1));
-        assert_eq!(rect0179().point_from_index(49), Point::new(0, 8));
-        assert_eq!(rect0179().point_from_index(55), Point::new(6, 8));
+        assert_eq!(rect0179().index_to_point(0), Point::new(0, 1));
+        assert_eq!(rect0179().index_to_point(6), Point::new(6, 1));
+        assert_eq!(rect0179().index_to_point(49), Point::new(0, 8));
+        assert_eq!(rect0179().index_to_point(55), Point::new(6, 8));
 
         let rect = rect0179();
         let mut index = 0;
@@ -221,8 +222,8 @@ mod tests {
             for x in 0..7 {
                 let point = Point::new(x, y);
 
-                assert_eq!(rect.point_from_index(index), point);
-                assert_eq!(rect.index_from_point(point), index);
+                assert_eq!(rect.index_to_point(index), point);
+                assert_eq!(rect.point_to_index(point), index);
                 index += 1;
             }
         }

@@ -41,7 +41,7 @@ impl DrunkardWalkMapBuilder {
         let mut staggered = 0;
 
         while staggered < self.stagger_distance {
-            let drunk_idx = map.point2d_to_index(drunkard_pos);
+            let drunk_idx = map.point_to_index(drunkard_pos);
             map.tiles[drunk_idx] = TileType::Floor;
             let roll = rng.gen_range(0..4);
             let delta = Point::from_tuple(CARDINALS[roll]);

@@ -64,9 +64,9 @@ pub fn determine_entity_spawn_points(
         .enumerate()
         .filter(|(idx, tile)| {
             **tile == TileType::Floor
-                && DistanceAlg::Pythagoras.distance2d(player_pos, map.index_to_point2d(*idx)) > 10.0
+                && DistanceAlg::Pythagoras.distance2d(player_pos, map.index_to_point(*idx)) > 10.0
         })
-        .map(|(idx, _)| map.index_to_point2d(idx))
+        .map(|(idx, _)| map.index_to_point(idx))
         .collect::<Vec<Point>>();
 
     let mut spawns = Vec::new();

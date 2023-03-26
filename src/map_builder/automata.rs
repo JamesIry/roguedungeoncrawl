@@ -34,7 +34,7 @@ impl CellularAutomataMapBuilder {
             for x in 1..width - 1 {
                 let roll = rng.gen_range(0..100);
                 if roll > 45 {
-                    let index = map.index_from_point(Point::new(x, y));
+                    let index = map.point_to_index(Point::new(x, y));
                     map.tiles[index] = TileType::Floor;
                 }
             }
@@ -60,7 +60,7 @@ impl CellularAutomataMapBuilder {
         for y in 1..map.height() - 1 {
             for x in 1..map.width() - 1 {
                 let neighbor_walls = Self::count_neighbor_walls(x, y, map);
-                let idx = map.index_from_point(Point::new(x, y));
+                let idx = map.point_to_index(Point::new(x, y));
                 if neighbor_walls > 4 || neighbor_walls == 0 {
                     new_tiles[idx] = TileType::Wall;
                 } else {

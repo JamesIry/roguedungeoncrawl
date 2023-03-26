@@ -39,7 +39,7 @@ impl Prefab {
             let mut can_place = false;
 
             dimensions.for_each(|pt| {
-                let idx = map.point2d_to_index(pt);
+                let idx = map.point_to_index(pt);
                 let distance = djikstra_map.map[idx];
                 if distance < 2000.0 && distance > 20.0 && amulet_start != pt {
                     can_place = true;
@@ -59,7 +59,7 @@ impl Prefab {
             for (ty, row) in self.text.iter().enumerate() {
                 for (tx, c) in row.chars().enumerate() {
                     let pt = Point::new(placement.x + (tx as i32), placement.y + (ty as i32));
-                    let idx = map.point2d_to_index(pt);
+                    let idx = map.point_to_index(pt);
                     match c {
                         'M' => {
                             map.tiles[idx] = TileType::Floor;

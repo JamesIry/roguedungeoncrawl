@@ -23,7 +23,7 @@ pub fn movement_system(
                 if optional_player.is_some() {
                     camera.center_on_point(want_move.destination);
                     fov.visible_tiles.iter().for_each(|pos| {
-                        let index = map.point2d_to_index(*pos);
+                        let index = map.point_to_index(*pos);
                         map.revealed[index] = Revealed::Seen;
                     });
                 }

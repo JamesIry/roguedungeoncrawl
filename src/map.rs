@@ -54,15 +54,19 @@ impl Map {
     }
 
     pub fn tile_at(&self, point: Point) -> TileType {
-        self.tiles[self.index_from_point(point)]
+        self.tiles[self.point_to_index(point)]
     }
 
-    pub fn index_from_point(&self, point: Point) -> usize {
-        self.world_rect.index_from_point(point)
+    pub fn point_to_index(&self, point: Point) -> usize {
+        self.world_rect.point_to_index(point)
+    }
+
+    pub fn index_to_point(&self, idx: usize) -> Point {
+        self.world_rect.index_to_point(idx)
     }
 
     pub fn set_tile(&mut self, point: Point, tile: TileType) {
-        let index = self.index_from_point(point);
+        let index = self.point_to_index(point);
         self.tiles[index] = tile;
     }
 
@@ -85,7 +89,7 @@ impl Map {
     fn valid_exit(&self, loc: Point, delta: Point) -> Option<usize> {
         let destination = loc + delta;
         if self.can_enter_tile(destination) {
-            Some(self.point2d_to_index(destination))
+            Some(self.point_to_index(destination))
         } else {
             None
         }
@@ -104,14 +108,14 @@ impl Map {
             .enumerate()
             .filter(|(_, dist)| *dist < UNREACHABLE)
             .max_by_key(|(_, dist)| FloatOrd(**dist))
-            .map(|(idx, _)| self.index_to_point2d(idx))
+            .map(|(idx, _)| self.index_to_point(idx))
             .unwrap_or(point)
     }
     pub fn djikstra_map(&self, point: Point) -> DijkstraMap {
         DijkstraMap::new(
             self.world_rect.width(),
             self.world_rect.height(),
-            &[self.point2d_to_index(point)],
+            &[self.point_to_index(point)],
             self,
             1024.0,
         )
@@ -125,11 +129,11 @@ impl Map {
             .map(|(idx, _)| {
                 (
                     idx,
-                    DistanceAlg::Pythagoras.distance2d(point, self.index_to_point2d(idx)),
+                    DistanceAlg::Pythagoras.distance2d(point, self.index_to_point(idx)),
                 )
             })
             .min_by_key(|(_, distance)| FloatOrd(*distance))
-            .map(|(idx, _)| self.index_to_point2d(idx))
+            .map(|(idx, _)| self.index_to_point(idx))
             .unwrap_or(point)
     }
 
@@ -152,17 +156,17 @@ impl Map {
                 .iter()
                 .enumerate()
                 .filter(|(idx, dist)| {
-                    self.can_enter_tile(self.index_to_point2d(*idx)) && *dist == UNREACHABLE
+                    self.can_enter_tile(self.index_to_point(*idx)) && *dist == UNREACHABLE
                 })
                 .min_by_key(|idx| {
-                    let point = self.index_to_point2d(idx.0);
+                    let point = self.index_to_point(idx.0);
                     DistanceAlg::PythagorasSquared.distance2d(point, player_pos) as i32
                 });
 
             match closest_unreachable {
                 Some((mut target, _)) => {
                     while djikstra_map.map[target] == *UNREACHABLE {
-                        let target_point = self.index_to_point2d(target);
+                        let target_point = self.index_to_point(target);
                         let diff = player_pos - target_point;
 
                         let roll = rng.gen_range(0..diff.x.abs() + diff.y.abs() + 2);
@@ -175,7 +179,7 @@ impl Map {
                         if walled_rect.in_bounds(new_target_point) {
                             self.set_tile(new_target_point, TileType::Floor);
 
-                            target = self.index_from_point(new_target_point);
+                            target = self.point_to_index(new_target_point);
                         }
                     }
                 }
@@ -185,22 +189,10 @@ impl Map {
             }
         }
     }
-}
 
-impl Algorithm2D for Map {
-    fn dimensions(&self) -> Point {
-        Point::new(self.width(), self.height())
-    }
-
-    fn in_bounds(&self, pos: Point) -> bool {
-        self.in_bounds(pos)
-    }
-}
-
-impl BaseMap for Map {
-    fn get_available_exits(&self, idx: usize) -> SmallVec<[(usize, f32); 10]> {
-        let mut exits = SmallVec::new();
-        let location = self.index_to_point2d(idx);
+    pub fn get_available_exits(&self, idx: usize) -> Vec<(usize, f32)> {
+        let mut exits = Vec::new();
+        let location = self.index_to_point(idx);
 
         for cardinal in CARDINALS {
             if let Some(idx) = self.valid_exit(location, Point::from_tuple(cardinal)) {
@@ -211,11 +203,7 @@ impl BaseMap for Map {
         exits
     }
 
-    fn get_pathing_distance(&self, idx1: usize, idx2: usize) -> f32 {
-        DistanceAlg::Pythagoras.distance2d(self.index_to_point2d(idx1), self.index_to_point2d(idx2))
-    }
-
-    fn is_opaque(&self, idx: usize) -> bool {
+    pub fn is_opaque(&self, idx: usize) -> bool {
         match self.tiles[idx] {
             TileType::Wall => true,
             TileType::Floor => false,

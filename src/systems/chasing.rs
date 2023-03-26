@@ -8,7 +8,7 @@ pub fn chasing_system(
     player: Query<&Position, With<Player>>,
 ) {
     if let Ok(player_pos) = player.get_single() {
-        let player_idx = map.point2d_to_index(player_pos.0);
+        let player_idx = map.point_to_index(player_pos.0);
 
         let search_targets = vec![player_idx];
         let dijkstra_map = DijkstraMap::new(
@@ -23,11 +23,11 @@ pub fn chasing_system(
             if !fov.visible_tiles.contains(&player_pos.0) {
                 return;
             }
-            let idx = map.point2d_to_index(pos.0);
+            let idx = map.point_to_index(pos.0);
             if let Some(destination) = dijkstra_map.find_lowest_exit(idx, map.as_ref()) {
                 let distance = DistanceAlg::Pythagoras.distance2d(pos.0, player_pos.0);
                 let destination = if distance > 1.2 {
-                    map.index_to_point2d(destination)
+                    map.index_to_point(destination)
                 } else {
                     player_pos.0
                 };

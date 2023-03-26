@@ -12,7 +12,7 @@ pub fn map_renderer_system(
     draw_batch.target(0);
     let viewable = camera.intersection(map.world_rect()).unwrap();
     for world_point in viewable.points() {
-        let index = map.point2d_to_index(world_point);
+        let index = map.point_to_index(world_point);
         if map.in_bounds(world_point)
             && (player_fov.visible_tiles.contains(&world_point)
                 || map.revealed[index] != Revealed::NotSeen)

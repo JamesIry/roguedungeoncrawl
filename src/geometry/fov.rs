@@ -12,7 +12,7 @@ pub fn field_of_view_set(origin: Point, range: i32, map: &Map) -> HashSet<Point>
     compute_fov(
         origin,
         range,
-        &(|point| !map.in_bounds(point) || map.is_opaque(map.index_from_point(point))),
+        &(|point| !map.in_bounds(point) || map.is_opaque(map.point_to_index(point))),
         &mut (|point| {
             if map.in_bounds(point) {
                 fov.insert(point);
