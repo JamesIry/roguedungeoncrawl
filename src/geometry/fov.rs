@@ -70,7 +70,9 @@ impl<'isb, 'mv> Quadrant<'isb, 'mv> {
 
     fn reveal(&mut self, tile: Point) {
         let transform = self.transform(tile);
-        (self.mark_visible)(transform);
+        if DistanceAlg::Pythagoras.distance2d(self.origin, transform) <= self.range {
+            (self.mark_visible)(transform);
+        }
     }
 
     fn is_wall(&self, tile: Option<Point>) -> bool {
@@ -78,7 +80,7 @@ impl<'isb, 'mv> Quadrant<'isb, 'mv> {
             None => false,
             Some(tile) => {
                 let transform = self.transform(tile);
-                DistanceAlg::Pythagoras.distance2d(self.origin, transform) <= self.range
+                DistanceAlg::Pythagoras.distance2d(self.origin, transform) <= self.range + 2.0
                     && (self.is_blocked)(transform)
             }
         }
@@ -89,7 +91,7 @@ impl<'isb, 'mv> Quadrant<'isb, 'mv> {
             None => false,
             Some(tile) => {
                 let transform = self.transform(tile);
-                DistanceAlg::Pythagoras.distance2d(self.origin, transform) <= self.range
+                DistanceAlg::Pythagoras.distance2d(self.origin, transform) <= self.range + 2.0
                     && !(self.is_blocked)(transform)
             }
         }
