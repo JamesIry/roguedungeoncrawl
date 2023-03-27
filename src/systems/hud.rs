@@ -14,7 +14,7 @@ pub fn hud_system(
     draw_batch.target(2);
     draw_batch.print_centered(1, "Explore the Dungeon. Cursor keys to move.");
     draw_batch.bar_horizontal(
-        Point::zero(),
+        Point::zero().to_bracket_point(),
         gamedata.text_display_width(),
         player_health.current,
         player_health.max,
@@ -30,7 +30,7 @@ pub fn hud_system(
     );
 
     draw_batch.print_color_right(
-        Point::new(gamedata.text_display_width(), 1),
+        Point::new(gamedata.text_display_width(), 1).to_bracket_point(),
         &map_info.name,
         ColorPair::new(YELLOW, BLACK),
     );
@@ -66,13 +66,13 @@ pub fn hud_system(
         } else {
             format!("{} : {}{}", y - 2, name, equip_message)
         };
-        draw_batch.print(Point::new(3, y), message);
+        draw_batch.print(Point::new(3, y).to_bracket_point(), message);
         y += 1;
     });
 
     if y > 3 {
         draw_batch.print_color(
-            Point::new(3, 2),
+            Point::new(3, 2).to_bracket_point(),
             "Items caried",
             ColorPair::new(YELLOW, BLACK),
         );

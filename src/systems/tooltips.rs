@@ -23,7 +23,7 @@ pub fn tooltips_system(
         } else {
             name.0.clone()
         };
-        draw_batch.print(screen_pos, &display);
+        draw_batch.print(screen_pos.to_bracket_point(), &display);
     }
 
     draw_batch.submit(10100).expect("Batch error");

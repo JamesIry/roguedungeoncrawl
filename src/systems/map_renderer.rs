@@ -33,7 +33,11 @@ pub fn map_renderer_system(
             let glyph = to_cp437(theme.tile_to_render(map.tile_at(world_point), revealed));
 
             let screen_point = camera.world_point_to_screen_point(world_point);
-            draw_batch.set(screen_point, ColorPair::new(tint, BLACK), glyph);
+            draw_batch.set(
+                screen_point.to_bracket_point(),
+                ColorPair::new(tint, BLACK),
+                glyph,
+            );
         }
     }
     draw_batch.submit(0).expect("Batch error");

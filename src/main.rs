@@ -31,7 +31,6 @@ mod prelude {
     pub use rand::Rng;
 
     pub use bracket_lib::color::*;
-    pub use bracket_lib::geometry::Point;
     pub use bracket_lib::terminal::main_loop;
     pub use bracket_lib::terminal::render_draw_buffer;
     pub use bracket_lib::terminal::to_cp437;
