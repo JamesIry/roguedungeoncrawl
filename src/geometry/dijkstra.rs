@@ -1,7 +1,7 @@
 use crate::prelude::*;
 
 use float_ord::FloatOrd;
-use std::{collections::BinaryHeap, f32::MAX};
+use std::{collections::VecDeque, f32::MAX};
 
 pub struct DijkstraMap {
     pub map: Vec<f32>,
@@ -22,16 +22,15 @@ impl DijkstraMap {
     }
 
     fn build(&mut self, starts: &[usize], map: &Map, max_depth: f32) {
-        let mut queue: BinaryHeap<QueueEntry> =
-            starts.iter().map(|p| QueueEntry(*p, 0.0)).collect();
-        while let Some(QueueEntry(index, distance)) = queue.pop() {
+        let mut queue: VecDeque<QueueEntry> = starts.iter().map(|p| QueueEntry(*p, 0.0)).collect();
+        while let Some(QueueEntry(index, distance)) = queue.pop_front() {
             if distance <= max_depth && distance < self.map[index] {
                 self.map[index] = distance;
                 let exits = map.get_available_exits(index);
                 exits
                     .iter()
                     .map(|(index, cost)| QueueEntry(*index, distance + cost))
-                    .for_each(|exit| queue.push(exit));
+                    .for_each(|exit| queue.push_back(exit));
             }
         }
     }
@@ -53,8 +52,7 @@ impl PartialEq for QueueEntry {
         self.0 == other.0 && FloatOrd(self.1) == FloatOrd(other.1)
     }
 }
-
-// Compare "backwards" because the queue want to sort max first
+// Compare "backwards" because the queue wants to sort max first
 // where we want min first
 impl Ord for QueueEntry {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {

@@ -1,23 +1,14 @@
 use crate::prelude::*;
 
 pub fn chasing_system(
-    map: Res<Map>,
+    mut map: ResMut<Map>,
     mut commands: Commands,
     movers: Query<(Entity, &Position, &ChasingPlayer, &FieldOfView)>,
     positions: Query<(Entity, &Position, &Health, Option<&Player>)>,
     player: Query<&Position, With<Player>>,
 ) {
     if let Ok(player_pos) = player.get_single() {
-        let player_idx = map.point_to_index(player_pos.0);
-
-        let search_targets = vec![player_idx];
-        let dijkstra_map = DijkstraMap::new(
-            map.width(),
-            map.height(),
-            &search_targets,
-            map.as_ref(),
-            1024.0,
-        );
+        let dijkstra_map = map.dijkstra_map(player_pos.0);
 
         movers.iter().for_each(|(entity, pos, _, fov)| {
             if !fov.visible_tiles.contains(&player_pos.0) {

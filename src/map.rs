@@ -1,8 +1,10 @@
+use std::sync::Arc;
+
 use float_ord::FloatOrd;
 
 use crate::prelude::*;
 
-pub const UNREACHABLE: &f32 = &f32::MAX;
+pub const UNREACHABLE: f32 = f32::MAX;
 pub const CARDINALS: [(i32, i32); 4] = [(-1, 0), (1, 0), (0, -1), (0, 1)];
 
 #[derive(Copy, Clone, PartialEq, Debug)]
@@ -24,6 +26,7 @@ pub struct Map {
     pub tiles: Vec<TileType>,
     world_rect: IRect,
     pub revealed: Vec<Revealed>,
+    cached_dijkstra_map: Option<(Point, Arc<DijkstraMap>)>,
 }
 impl Map {
     pub fn new(width: i32, height: i32, tile: TileType) -> Self {
@@ -33,6 +36,7 @@ impl Map {
             tiles: vec![tile; num_tiles],
             world_rect: rect,
             revealed: vec![Revealed::NotSeen; num_tiles],
+            cached_dijkstra_map: None,
         }
     }
 
@@ -66,6 +70,7 @@ impl Map {
     }
 
     pub fn set_tile(&mut self, point: Point, tile: TileType) {
+        self.cached_dijkstra_map = None;
         let index = self.point_to_index(point);
         self.tiles[index] = tile;
     }
@@ -99,19 +104,32 @@ impl Map {
         self.set_rect(rect, TileType::Floor);
     }
 
-    pub fn find_most_distant(&self, point: Point) -> Point {
-        let djikstra_map = self.djikstra_map(point);
+    pub fn find_most_distant(&mut self, point: Point) -> Point {
+        let djikstra_map = self.dijkstra_map(point);
 
         djikstra_map
             .map
             .iter()
             .enumerate()
-            .filter(|(_, dist)| *dist < UNREACHABLE)
+            .filter(|(_, dist)| **dist < UNREACHABLE)
             .max_by_key(|(_, dist)| FloatOrd(**dist))
             .map(|(idx, _)| self.index_to_point(idx))
             .unwrap_or(point)
     }
-    pub fn djikstra_map(&self, point: Point) -> DijkstraMap {
+    pub fn dijkstra_map(&mut self, point: Point) -> Arc<DijkstraMap> {
+        self.cached_dijkstra_map
+            .iter()
+            .filter(|(cached_point, _)| *cached_point == point)
+            .map(|(_, cached_map)| cached_map.clone())
+            .next()
+            .unwrap_or({
+                let new_map = Arc::new(self.uncached_dijkstra_map(point));
+                self.cached_dijkstra_map = Some((point, new_map.clone()));
+                new_map
+            })
+    }
+
+    pub fn uncached_dijkstra_map(&mut self, point: Point) -> DijkstraMap {
         DijkstraMap::new(
             self.world_rect.width(),
             self.world_rect.height(),
@@ -141,17 +159,18 @@ impl Map {
     }
 
     pub fn connect_disconnected(&mut self, player_pos: Point, rng: &mut ThreadRng) {
-        let mut have_unreachable = true;
         let walled_rect = self.walled_rect();
-        while have_unreachable {
-            let djikstra_map = self.djikstra_map(player_pos);
+        'outer: loop {
+            // no point in using the cached dijkstra map because we'll be changing the map
+            // on every iteration, invalidating the cache
+            let djikstra_map = self.uncached_dijkstra_map(player_pos);
 
             let closest_unreachable = djikstra_map
                 .map
                 .iter()
                 .enumerate()
                 .filter(|(idx, dist)| {
-                    self.can_enter_tile(self.index_to_point(*idx)) && *dist == UNREACHABLE
+                    self.can_enter_tile(self.index_to_point(*idx)) && **dist == UNREACHABLE
                 })
                 .min_by_key(|idx| {
                     let point = self.index_to_point(idx.0);
@@ -160,7 +179,7 @@ impl Map {
 
             match closest_unreachable {
                 Some((mut target, _)) => {
-                    while djikstra_map.map[target] == *UNREACHABLE {
+                    while djikstra_map.map[target] == UNREACHABLE {
                         let target_point = self.index_to_point(target);
                         let diff = player_pos - target_point;
 
@@ -179,7 +198,7 @@ impl Map {
                     }
                 }
                 None => {
-                    have_unreachable = false;
+                    break 'outer;
                 }
             }
         }

@@ -23,7 +23,7 @@ impl Prefab {
         entity_spawns: &mut Vec<Point>,
     ) {
         let mut placement = None;
-        let djikstra_map = map.djikstra_map(player_start);
+        let djikstra_map = map.dijkstra_map(player_start);
 
         let width = self.width();
         let height = self.height();
