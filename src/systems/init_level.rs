@@ -27,6 +27,7 @@ pub fn init_level_system(
         gamedata.map_width,
         gamedata.map_height,
         gamedata.num_monsters,
+        gamedata.max_dijkstra_depth,
     );
 
     gamedata.apply_prefab(
@@ -35,6 +36,7 @@ pub fn init_level_system(
         player_start,
         amulet_start,
         &mut entity_spawns,
+        gamedata.max_dijkstra_depth,
     );
 
     let theme = map_level_def.get_theme(&gamedata);

@@ -17,7 +17,14 @@ pub mod prelude {
 }
 
 pub trait MapBuilder {
-    fn build(&self, rng: &mut ThreadRng, width: i32, height: i32, num_monsters: usize) -> BuiltMap;
+    fn build(
+        &self,
+        rng: &mut ThreadRng,
+        width: i32,
+        height: i32,
+        num_monsters: usize,
+        max_depth: f32,
+    ) -> BuiltMap;
 }
 
 #[derive(Copy, Clone, Deserialize, Debug, Resource)]

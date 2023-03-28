@@ -14,6 +14,8 @@ pub struct GameData {
     pub map_width: i32,
     pub map_height: i32,
     pub num_monsters: usize,
+    pub max_monster_visibility: f32,
+    pub max_dijkstra_depth: f32,
 
     pub tile_width: i32,
     pub tile_height: i32,
@@ -168,6 +170,7 @@ impl GameData {
         player_start: Point,
         amulet_start: Point,
         entity_spawns: &mut Vec<Point>,
+        max_depth: f32,
     ) {
         self.prefabs[rng.random_slice_index(&self.prefabs).unwrap()].apply_prefab(
             map,
@@ -175,6 +178,7 @@ impl GameData {
             player_start,
             amulet_start,
             entity_spawns,
+            max_depth,
         );
     }
 }

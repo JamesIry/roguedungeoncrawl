@@ -26,7 +26,7 @@ pub struct Map {
     pub tiles: Vec<TileType>,
     world_rect: IRect,
     pub revealed: Vec<Revealed>,
-    cached_dijkstra_map: Option<(Point, Arc<DijkstraMap>)>,
+    cached_dijkstra_map: Option<(Point, f32, Arc<DijkstraMap>)>,
 }
 impl Map {
     pub fn new(width: i32, height: i32, tile: TileType) -> Self {
@@ -104,8 +104,8 @@ impl Map {
         self.set_rect(rect, TileType::Floor);
     }
 
-    pub fn find_most_distant(&mut self, point: Point) -> Point {
-        let djikstra_map = self.dijkstra_map(point);
+    pub fn find_most_distant(&mut self, point: Point, max_depth: f32) -> Point {
+        let djikstra_map = self.dijkstra_map(point, max_depth);
 
         djikstra_map
             .map
@@ -116,26 +116,28 @@ impl Map {
             .map(|(idx, _)| self.index_to_point(idx))
             .unwrap_or(point)
     }
-    pub fn dijkstra_map(&mut self, point: Point) -> Arc<DijkstraMap> {
+    pub fn dijkstra_map(&mut self, point: Point, max_depth: f32) -> Arc<DijkstraMap> {
         self.cached_dijkstra_map
             .iter()
-            .filter(|(cached_point, _)| *cached_point == point)
-            .map(|(_, cached_map)| cached_map.clone())
+            .filter(|(cached_point, cached_depth, _)| {
+                *cached_point == point && *cached_depth == max_depth
+            })
+            .map(|(_, _, cached_map)| cached_map.clone())
             .next()
             .unwrap_or({
-                let new_map = Arc::new(self.uncached_dijkstra_map(point));
-                self.cached_dijkstra_map = Some((point, new_map.clone()));
+                let new_map = Arc::new(self.uncached_dijkstra_map(point, max_depth));
+                self.cached_dijkstra_map = Some((point, max_depth, new_map.clone()));
                 new_map
             })
     }
 
-    pub fn uncached_dijkstra_map(&mut self, point: Point) -> DijkstraMap {
+    pub fn uncached_dijkstra_map(&mut self, point: Point, max_depth: f32) -> DijkstraMap {
         DijkstraMap::new(
             self.world_rect.width(),
             self.world_rect.height(),
             &[self.point_to_index(point)],
             self,
-            1024.0,
+            max_depth,
         )
     }
 
@@ -158,12 +160,12 @@ impl Map {
         IRect::with_size(1, 1, self.width() - 2, self.height() - 2)
     }
 
-    pub fn connect_disconnected(&mut self, player_pos: Point, rng: &mut ThreadRng) {
+    pub fn connect_disconnected(&mut self, player_pos: Point, rng: &mut ThreadRng, max_depth: f32) {
         let walled_rect = self.walled_rect();
         'outer: loop {
             // no point in using the cached dijkstra map because we'll be changing the map
             // on every iteration, invalidating the cache
-            let djikstra_map = self.uncached_dijkstra_map(player_pos);
+            let djikstra_map = self.uncached_dijkstra_map(player_pos, max_depth);
 
             let closest_unreachable = djikstra_map
                 .map

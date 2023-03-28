@@ -118,6 +118,7 @@ fn test_harness(gamedata: GameData) -> BError {
         gamedata.map_width,
         gamedata.map_height,
         gamedata.num_monsters,
+        gamedata.max_dijkstra_depth,
     );
 
     gamedata.apply_prefab(
@@ -126,6 +127,7 @@ fn test_harness(gamedata: GameData) -> BError {
         player_start,
         amulet_start,
         &mut entity_spawns,
+        gamedata.max_dijkstra_depth,
     );
     display(
         "Final Map",

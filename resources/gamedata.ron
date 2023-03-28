@@ -7,6 +7,9 @@ GameData(
     map_width: 80,
     map_height: 50,
     num_monsters: 50,
+    max_monster_visibility: 20.0,
+    max_dijkstra_depth: 1024.0,
+    
 
     tile_width: 32,
     tile_height: 32,

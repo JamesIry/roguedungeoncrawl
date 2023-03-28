@@ -8,7 +8,14 @@ pub struct DrunkardWalkMapBuilder {
 }
 
 impl MapBuilder for DrunkardWalkMapBuilder {
-    fn build(&self, rng: &mut ThreadRng, width: i32, height: i32, num_monsters: usize) -> BuiltMap {
+    fn build(
+        &self,
+        rng: &mut ThreadRng,
+        width: i32,
+        height: i32,
+        num_monsters: usize,
+        max_depth: f32,
+    ) -> BuiltMap {
         let mut map = Map::new(width, height, TileType::Wall);
         let desired_cleared = ((map.width() * map.height()) as f32 * self.cleared_ratio) as i32;
         let mut cleared = 0;
@@ -20,9 +27,9 @@ impl MapBuilder for DrunkardWalkMapBuilder {
 
         let player_start = map.closest_floor_point(map.center());
 
-        map.connect_disconnected(player_start, rng);
+        map.connect_disconnected(player_start, rng, max_depth);
 
-        let amulet_start = map.find_most_distant(player_start);
+        let amulet_start = map.find_most_distant(player_start, max_depth);
         let entity_spawns = determine_entity_spawn_points(&map, player_start, rng, num_monsters);
         BuiltMap {
             map,

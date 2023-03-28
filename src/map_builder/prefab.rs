@@ -21,9 +21,10 @@ impl Prefab {
         player_start: Point,
         amulet_start: Point,
         entity_spawns: &mut Vec<Point>,
+        max_depth: f32,
     ) {
         let mut placement = None;
-        let djikstra_map = map.dijkstra_map(player_start);
+        let djikstra_map = map.dijkstra_map(player_start, max_depth);
 
         let width = self.width();
         let height = self.height();

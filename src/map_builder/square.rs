@@ -7,13 +7,20 @@ pub struct SquareMapBuilder {
     pub num_rooms: usize,
 }
 impl MapBuilder for SquareMapBuilder {
-    fn build(&self, rng: &mut ThreadRng, width: i32, height: i32, num_monsters: usize) -> BuiltMap {
+    fn build(
+        &self,
+        rng: &mut ThreadRng,
+        width: i32,
+        height: i32,
+        num_monsters: usize,
+        max_depth: f32,
+    ) -> BuiltMap {
         let mut map = Map::new(width, height, TileType::Wall);
 
         let rooms = self.build_random_rooms(&mut map, rng);
         Self::build_corridors(&mut map, rng, &rooms);
         let player_start = rooms[0].center();
-        let amulet_start = map.find_most_distant(player_start);
+        let amulet_start = map.find_most_distant(player_start, max_depth);
 
         let entity_spawns = determine_entity_spawn_points(&map, player_start, rng, num_monsters);
         BuiltMap {

@@ -2,13 +2,14 @@ use crate::prelude::*;
 
 pub fn chasing_system(
     mut map: ResMut<Map>,
+    gamedata: Res<GameData>,
     mut commands: Commands,
     movers: Query<(Entity, &Position, &ChasingPlayer, &FieldOfView)>,
     positions: Query<(Entity, &Position, &Health, Option<&Player>)>,
     player: Query<&Position, With<Player>>,
 ) {
     if let Ok(player_pos) = player.get_single() {
-        let dijkstra_map = map.dijkstra_map(player_pos.0);
+        let dijkstra_map = map.dijkstra_map(player_pos.0, gamedata.max_monster_visibility);
 
         movers.iter().for_each(|(entity, pos, _, fov)| {
             if !fov.visible_tiles.contains(&player_pos.0) {
