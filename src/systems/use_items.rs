@@ -32,8 +32,11 @@ pub fn use_items_system(
                     }
                     if optional_map.is_some() {
                         map.revealed.iter_mut().for_each(|t| {
-                            if *t == Revealed::NotSeen {
-                                *t = Revealed::Mapped
+                            *t = match *t {
+                                Revealed::NotSeen => Revealed::Mapped,
+                                Revealed::Encompassed => Revealed::Seen,
+                                Revealed::Mapped => Revealed::Mapped,
+                                Revealed::Seen => Revealed::Seen,
                             }
                         });
                     }

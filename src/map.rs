@@ -17,6 +17,10 @@ pub enum TileType {
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub enum Revealed {
     NotSeen,
+    /// has been entirely encircled by Seen Wall tiles, but not yet mapped.
+    /// Used to drive the flood fill that marks wall items as Seen
+    /// When they are both mapped and surrounded by Seen Walls
+    Encompassed,
     Mapped,
     Seen,
 }
@@ -87,12 +91,18 @@ impl Map {
         });
     }
 
+    pub fn reveal(&mut self, point: Point) -> bool {
+        let index = self.point_to_index(point);
+        let was_revealed = self.revealed[index] == Revealed::Seen;
+        self.revealed[index] = Revealed::Seen;
+        was_revealed
+    }
+
     pub fn world_rect(&self) -> &IRect {
         &self.world_rect
     }
 
-    fn valid_exit(&self, loc: Point, delta: Point) -> Option<usize> {
-        let destination = loc + delta;
+    fn valid_exit(&self, destination: Point) -> Option<usize> {
         if self.can_enter_tile(destination) {
             Some(self.point_to_index(destination))
         } else {
@@ -206,17 +216,20 @@ impl Map {
         }
     }
 
+    pub fn get_neighbors(&self, idx: usize) -> Vec<Point> {
+        CARDINALS
+            .iter()
+            .map(|dir| Point::from_tuple(*dir) + self.index_to_point(idx))
+            .filter(|pt| self.in_bounds(*pt))
+            .collect()
+    }
+
     pub fn get_available_exits(&self, idx: usize) -> Vec<(usize, f32)> {
-        let mut exits = Vec::new();
-        let location = self.index_to_point(idx);
-
-        for cardinal in CARDINALS {
-            if let Some(idx) = self.valid_exit(location, Point::from_tuple(cardinal)) {
-                exits.push((idx, 1.0));
-            }
-        }
-
-        exits
+        self.get_neighbors(idx)
+            .iter()
+            .filter_map(|pt| self.valid_exit(*pt))
+            .map(|idx| (idx, 1.0))
+            .collect()
     }
 
     pub fn is_opaque(&self, idx: usize) -> bool {
