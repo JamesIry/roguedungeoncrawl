@@ -37,19 +37,21 @@ impl Prefab {
                 width,
                 height,
             );
-            let mut can_place = false;
+            if !dimensions.in_bounds(amulet_start) {
+                let mut can_place = false;
 
-            dimensions.points().for_each(|pt| {
-                let idx = map.point_to_index(pt);
-                let distance = djikstra_map.map[idx];
-                if distance < 2000.0 && distance > 20.0 && amulet_start != pt {
-                    can_place = true;
+                dimensions.points().for_each(|pt| {
+                    let idx = map.point_to_index(pt);
+                    let distance = djikstra_map.map[idx];
+                    if distance > 20.0 {
+                        can_place = true;
+                    }
+                });
+
+                if can_place {
+                    placement = Some(Point::new(dimensions.x1, dimensions.y1));
+                    entity_spawns.retain(|pt| !dimensions.in_bounds(*pt));
                 }
-            });
-
-            if can_place {
-                placement = Some(Point::new(dimensions.x1, dimensions.y1));
-                entity_spawns.retain(|pt| !dimensions.in_bounds(*pt));
             }
 
             attempts += 1;
