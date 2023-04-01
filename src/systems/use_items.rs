@@ -31,14 +31,10 @@ pub fn use_items_system(
                         }
                     }
                     if optional_map.is_some() {
-                        map.revealed.iter_mut().for_each(|t| {
-                            *t = match *t {
-                                Revealed::NotSeen => Revealed::Mapped,
-                                Revealed::Encompassed => Revealed::Seen,
-                                Revealed::Mapped => Revealed::Mapped,
-                                Revealed::Seen => Revealed::Seen,
-                            }
-                        });
+                        map.revealed
+                            .iter_mut()
+                            .filter(|t| **t == Revealed::NotSeen)
+                            .for_each(|t| *t = Revealed::Mapped);
                     }
                 });
 

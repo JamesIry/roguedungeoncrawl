@@ -1,4 +1,7 @@
-use std::sync::Arc;
+use std::{
+    collections::{HashSet, VecDeque},
+    sync::Arc,
+};
 
 use float_ord::FloatOrd;
 
@@ -17,10 +20,6 @@ pub enum TileType {
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub enum Revealed {
     NotSeen,
-    /// has been entirely encircled by Seen Wall tiles, but not yet mapped.
-    /// Used to drive the flood fill that marks wall items as Seen
-    /// When they are both mapped and surrounded by Seen Walls
-    Encompassed,
     Mapped,
     Seen,
 }
@@ -91,11 +90,57 @@ impl Map {
         });
     }
 
-    pub fn reveal(&mut self, point: Point) -> bool {
+    pub fn reveal(&mut self, point: Point) {
         let index = self.point_to_index(point);
-        let was_revealed = self.revealed[index] == Revealed::Seen;
-        self.revealed[index] = Revealed::Seen;
-        was_revealed
+        if self.revealed[index] != Revealed::Seen {
+            self.revealed[index] = Revealed::Seen;
+
+            self.get_neighbors(index)
+                .iter()
+                .for_each(|pt| self.find_encompassed_tiles(*pt));
+        }
+    }
+
+    /// Finds wall tiles that have been entirely encompassed
+    /// by Seen wall tiles. Such encompassed Wall tiles are
+    /// promoted to Seen
+    /// Basically this is a flood fill algorithm with a check
+    /// to make sure the flood area is fully enclosed
+    fn find_encompassed_tiles(&mut self, point: Point) {
+        let mut visited = HashSet::new();
+        let mut encompassed = Vec::new();
+        let mut queue = VecDeque::new();
+        queue.push_back(point);
+        while let Some(point) = queue.pop_front() {
+            if self.in_bounds(point) {
+                let index = self.point_to_index(point);
+                if !visited.contains(&index) {
+                    visited.insert(index);
+                    let tile = self.tiles[index];
+                    let revealed = self.revealed[index];
+                    match tile {
+                        TileType::Wall => {
+                            // if seen, we're at the edge and don't need to push more into the queue
+                            // othrwise, more into the queue!
+                            if revealed != Revealed::Seen {
+                                encompassed.push(index);
+                                self.get_neighbors(index)
+                                    .iter()
+                                    .for_each(|pt| queue.push_back(*pt))
+                            }
+                        }
+                        // wandered past the end the area without hitting a seen wall,
+                        // so things are not encompassed
+                        TileType::Floor => return,
+                        TileType::Exit => return,
+                    }
+                }
+            }
+        }
+
+        encompassed.iter().for_each(|idx| {
+            self.revealed[*idx] = Revealed::Seen;
+        });
     }
 
     pub fn world_rect(&self) -> &IRect {

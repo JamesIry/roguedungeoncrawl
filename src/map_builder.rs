@@ -47,7 +47,6 @@ impl MapTheme {
             (TileType::Wall, Revealed::Mapped) => self.mapped_wall,
             (TileType::Floor, Revealed::Mapped) => self.mapped_floor,
             (TileType::Exit, Revealed::Mapped) => self.mapped_exit,
-            (_, Revealed::Encompassed) => self.not_seen,
             (_, Revealed::NotSeen) => self.not_seen,
         }
     }
